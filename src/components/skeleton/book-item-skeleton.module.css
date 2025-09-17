@@ -1,0 +1,23 @@
+.container {
+    display: flex;
+    gap: 15px;
+    padding: 20px 10px;
+    border-bottom: 1px solid rgb(220, 220, 220);
+}
+
+.cover_img {
+    width: 80px;
+    height: 105px;
+    background-color: rgb(230, 230, 230);
+}
+
+.info_container {
+    flex: 1; /* 좌우 너비를 모두 차지하도록 1로 지정 (좌우로 쫙 늘어나게) */
+}
+
+.title, .subtitle, .author {
+    width: 100%;    /* 화면을 꽉 채우도록 지정 */
+    height: 20px;   /* 실제 글자의 높이는 20px 로 지정 */
+    background-color: rgb(230, 230, 230); /* 배경색을 회색으로 지정 */
+}
+

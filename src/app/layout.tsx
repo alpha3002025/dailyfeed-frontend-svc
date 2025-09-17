@@ -33,7 +33,7 @@ export default function RootLayout({
         <div className={style.container}>
           <header>
             <Link href={"/"}>
-              <Image className="logo" src={"/logo2.png"} width={150} height={50} alt={`books feed`}/>
+              <Image className="logo" src={"/logo3.png"} width={150} height={50} alt={`books feed`}/>
             </Link>
           </header>
           <main>{children}</main>

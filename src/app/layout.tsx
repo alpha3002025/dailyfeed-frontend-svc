@@ -10,15 +10,15 @@ async function Footer(){
   );
 
   if (!response.ok){
-    return <footer>books feed</footer>;
+    return <footer>dailyfeed</footer>;
   }
 
   const books: BookData[] = await response.json();
   const bookCount = books.length;
 
   return <footer>
-    <div>books feed</div>
-    <div>{bookCount} 개의 도서가 등록되어 있습니다.</div>
+    <div>dailyfeed</div>
+    <div>당신의 소중한 일상을 기록하세요</div>
   </footer>
 }
 
@@ -30,16 +30,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className={style.container}>
-          <header>
-            <Link href={"/"}>
-              <Image className="logo" src={"/logo3.png"} width={150} height={50} alt={`books feed`}/>
-            </Link>
-          </header>
-          <main>{children}</main>
-          {/* <footer>books feed</footer> */}
-          <Footer/>
-        </div>
       </body>
     </html>
   );

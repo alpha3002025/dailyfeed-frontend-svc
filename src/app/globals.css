@@ -1,0 +1,17 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #f8fafc;
+  color: #1a202c;
+  line-height: 1.625;
+  letter-spacing: 0.025em;
+}
+
+html {
+  background-color: #f8fafc;
+}

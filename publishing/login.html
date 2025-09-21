@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyFeed - 로그인</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        .left-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .logo {
+            font-size: 300px;
+            font-weight: bold;
+            color: #ffffff;
+            user-select: none;
+        }
+
+        .right-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px 80px;
+            max-width: 820px;
+        }
+
+        .content {
+            max-width: 580px;
+        }
+
+        .main-title {
+            font-size: 64px;
+            font-weight: bold;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+
+        .subtitle-english {
+            font-size: 24px;
+            font-weight: normal;
+            margin-bottom: 12px;
+            line-height: 1.3;
+            color: #e7e9ea;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            font-weight: normal;
+            margin-bottom: 32px;
+            line-height: 1.3;
+            color: #71767b;
+        }
+
+        .form-container {
+            margin-bottom: 40px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 16px;
+            font-size: 17px;
+            border: 1px solid #333333;
+            border-radius: 4px;
+            background-color: #000000;
+            color: #ffffff;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: #1d9bf0;
+        }
+
+        .input-field::placeholder {
+            color: #71767b;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            font-size: 17px;
+            font-weight: bold;
+            color: #000000;
+            background-color: #ffffff;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: background-color 0.2s;
+        }
+
+        .login-button:hover {
+            background-color: #e7e7e8;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 20px 0;
+            color: #71767b;
+            font-size: 15px;
+        }
+
+        .signup-text {
+            font-size: 17px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .signup-button {
+            width: 100%;
+            padding: 12px;
+            font-size: 17px;
+            font-weight: bold;
+            color: #1d9bf0;
+            background-color: transparent;
+            border: 1px solid #333333;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .signup-button:hover {
+            background-color: #031019;
+        }
+
+        .google-button {
+            width: 100%;
+            padding: 12px;
+            font-size: 17px;
+            font-weight: bold;
+            color: #000000;
+            background-color: #ffffff;
+            border: 1px solid #dadce0;
+            border-radius: 50px;
+            cursor: pointer;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: background-color 0.2s;
+        }
+
+        .google-button:hover {
+            background-color: #f8f9fa;
+        }
+
+        .google-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .popup {
+            background-color: #000000;
+            border: 1px solid #333333;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 320px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .popup h3 {
+            font-size: 20px;
+            margin-bottom: 16px;
+            font-weight: bold;
+        }
+
+        .popup p {
+            font-size: 15px;
+            color: #71767b;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .popup-button {
+            padding: 10px 24px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #000000;
+            background-color: #ffffff;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .popup-button:hover {
+            background-color: #e7e7e8;
+        }
+
+        .terms {
+            font-size: 11px;
+            color: #71767b;
+            line-height: 1.4;
+            margin-top: 12px;
+        }
+
+        .terms a {
+            color: #1d9bf0;
+            text-decoration: none;
+        }
+
+        .terms a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .left-section {
+                min-height: 40vh;
+            }
+
+            .logo {
+                font-size: 200px;
+            }
+
+            .right-section {
+                padding: 20px 40px;
+                max-width: none;
+            }
+
+            .main-title {
+                font-size: 48px;
+            }
+
+            .subtitle-english {
+                font-size: 20px;
+            }
+
+            .subtitle {
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .left-section {
+                min-height: 30vh;
+            }
+
+            .logo {
+                font-size: 120px;
+            }
+
+            .right-section {
+                padding: 20px;
+            }
+
+            .main-title {
+                font-size: 36px;
+            }
+
+            .subtitle-english {
+                font-size: 18px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-section">
+            <div class="logo">D</div>
+        </div>
+        
+        <div class="right-section">
+            <div class="content">
+                <h1 class="main-title">당신의 소중한 순간을 기록하세요</h1>
+                
+                <div class="subtitle-english">
+                    Archive and share your memorable moments
+                </div>
+                
+                <div class="form-container">
+                    <div class="input-group">
+                        <input type="email" class="input-field" placeholder="이메일" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" class="input-field" placeholder="비밀번호" required>
+                    </div>
+                    <button class="login-button">로그인</button>
+                </div>
+
+                <div class="divider">또는</div>
+                
+                <div class="signup-text">아직 DailyFeed 계정이 없나요?</div>
+                <button class="google-button">
+                    <svg class="google-icon" viewBox="0 0 24 24">
+                        <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    Google 계정으로 가입하기
+                </button>
+                <button class="signup-button">계정 만들기</button>
+                
+                <div class="terms">
+                    가입하시면 DailyFeed의 <a href="#">이용약관</a>과 <a href="#">개인정보처리방침</a>에 동의하는 것으로 간주됩니다.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup -->
+    <div class="popup-overlay" id="popupOverlay">
+        <div class="popup">
+            <h3>서비스 준비 중</h3>
+            <p>Google 계정으로 가입하기는 추후 지원 예정입니다.<br>현재는 이메일 회원가입만 가능합니다.</p>
+            <button class="popup-button" onclick="closePopup()">확인</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginButton = document.querySelector('.login-button');
+            const signupButton = document.querySelector('.signup-button');
+            const googleButton = document.querySelector('.google-button');
+            const emailInput = document.querySelector('input[type="email"]');
+            const passwordInput = document.querySelector('input[type="password"]');
+
+            loginButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                const email = emailInput.value;
+                const password = passwordInput.value;
+                
+                if (!email || !password) {
+                    alert('이메일과 비밀번호를 모두 입력해주세요.');
+                    return;
+                }
+                
+                // 여기에 실제 로그인 로직을 추가하세요
+                console.log('로그인 시도:', { email, password });
+                alert('로그인 기능이 구현되지 않았습니다.');
+            });
+
+            signupButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                // 여기에 회원가입 페이지로 이동하는 로직을 추가하세요
+                console.log('회원가입 페이지로 이동');
+                alert('회원가입 페이지로 이동합니다.');
+            });
+
+            googleButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                showPopup();
+            });
+
+            // Enter 키로 로그인
+            [emailInput, passwordInput].forEach(input => {
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        loginButton.click();
+                    }
+                });
+            });
+        });
+
+        function showPopup() {
+            document.getElementById('popupOverlay').style.display = 'flex';
+        }
+
+        function closePopup() {
+            document.getElementById('popupOverlay').style.display = 'none';
+        }
+
+        // 팝업 배경 클릭시 닫기
+        document.addEventListener('click', function(e) {
+            if (e.target.id === 'popupOverlay') {
+                closePopup();
+            }
+        });
+    </script>
+</body>
+</html>

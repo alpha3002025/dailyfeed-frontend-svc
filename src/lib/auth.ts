@@ -116,11 +116,46 @@ class AuthService {
     }
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
+    try {
+      // Call server logout API if token exists
+      if (this.token) {
+        const response = await fetch(`${API_BASE_URL}/api/authentication/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        // Log the response for debugging, but don't throw error if logout fails
+        // This ensures local logout always works even if server is unreachable
+        if (!response.ok) {
+          console.warn('Server logout failed, but proceeding with local logout:', response.status);
+        } else {
+          console.log('Server logout successful');
+        }
+      }
+    } catch (error) {
+      // Log error but don't prevent local logout
+      console.warn('Logout API call failed, proceeding with local logout:', error);
+    } finally {
+      // Always clear local token regardless of server response
+      this.clearLocalSession();
+    }
+  }
+
+  // Separate method for clearing local session
+  private clearLocalSession(): void {
     this.token = null;
     if (typeof window !== 'undefined') {
       localStorage.removeItem(TOKEN_KEY);
     }
+  }
+
+  // Method for force logout (when token is invalid)
+  forceLogout(): void {
+    this.clearLocalSession();
   }
 
   getToken(): string | null {

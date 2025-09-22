@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import styles from './feed.module.css';
 
 export default function FeedPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoggingOut } = useAuth();
   const [activeMenu, setActiveMenu] = useState('follows');
   const [activeTab, setActiveTab] = useState('for-you');
 
@@ -20,9 +20,14 @@ export default function FeedPage() {
     setActiveMenu(menuType);
   };
 
-  const handleLogout = () => {
-    logout();
-    // Redirect to login will be handled by ProtectedRoute
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Redirect to login will be handled by ProtectedRoute
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if logout fails, the user will be logged out locally
+    }
   };
 
   return (
@@ -104,8 +109,12 @@ export default function FeedPage() {
                 <div className={styles.userHandle}>@{user?.handle}</div>
               </div>
             </div>
-            <button className={styles.logoutButton} onClick={handleLogout}>
-              로그아웃
+            <button
+              className={styles.logoutButton}
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+            >
+              {isLoggingOut ? '로그아웃 중...' : '로그아웃'}
             </button>
           </div>
         </div>

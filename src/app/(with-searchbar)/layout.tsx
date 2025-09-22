@@ -1,5 +1,6 @@
 import { ReactNode, Suspense } from "react";
 import Searchbar from "@/components/searchbar";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function Layout({
   children,
@@ -7,11 +8,13 @@ export default function Layout({
   children: ReactNode;
 }) {
   return (
-    <div>
-      <Suspense fallback={<div>Loading ... </div>}>
-        <Searchbar />
-      </Suspense>
-      {children}
-    </div>
+    <ProtectedRoute>
+      <div>
+        <Suspense fallback={<div>Loading ... </div>}>
+          <Searchbar />
+        </Suspense>
+        {children}
+      </div>
+    </ProtectedRoute>
   );
 }

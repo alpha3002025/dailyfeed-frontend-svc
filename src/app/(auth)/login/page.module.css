@@ -11,6 +11,7 @@
     overflow: auto;
     margin: 0;
     padding: 0;
+    z-index: 1000;
 }
 
 .container {
@@ -76,6 +77,16 @@
 
 .form_container {
     margin-bottom: 40px;
+}
+
+.error_message {
+    background-color: #fee;
+    color: #d00;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    border: 1px solid #fcc;
 }
 
 .input_group {
@@ -305,5 +316,178 @@
 
     .subtitle {
         font-size: 16px;
+    }
+}
+
+/* Signup Modal Styles */
+.modal_overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    overflow: auto;
+    padding: 20px;
+}
+
+.signup_modal {
+    background-color: #ffffff;
+    color: #000000;
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.signup_modal h2 {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 24px;
+    color: #000000;
+}
+
+.close_button {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #71767b;
+    cursor: pointer;
+    padding: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.close_button:hover {
+    background-color: #f0f0f0;
+}
+
+.error_message {
+    background-color: #fee;
+    color: #d00;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.form_section {
+    margin-bottom: 32px;
+}
+
+.form_section h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #333333;
+}
+
+.form_group {
+    margin-bottom: 20px;
+}
+
+.form_group label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333333;
+}
+
+.form_group input,
+.form_group select,
+.form_group textarea {
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+    border: 1px solid #dadce0;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #000000;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+}
+
+.form_group input:focus,
+.form_group select:focus,
+.form_group textarea:focus {
+    border-color: #1d9bf0;
+    box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.1);
+}
+
+.form_group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form_actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 32px;
+}
+
+.cancel_button,
+.submit_button {
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+}
+
+.cancel_button {
+    background-color: #f0f0f0;
+    color: #333333;
+}
+
+.cancel_button:hover {
+    background-color: #e0e0e0;
+}
+
+.submit_button {
+    background-color: #1d9bf0;
+    color: #ffffff;
+}
+
+.submit_button:hover {
+    background-color: #1a8cd8;
+}
+
+.submit_button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .signup_modal {
+        padding: 24px;
+    }
+
+    .form_actions {
+        flex-direction: column;
+    }
+
+    .cancel_button,
+    .submit_button {
+        width: 100%;
     }
 }

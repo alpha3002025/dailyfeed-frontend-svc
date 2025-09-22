@@ -1,30 +1,164 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import style from "./page.module.css";
 
 export default function Page() {
+    const router = useRouter();
+    const { login, isAuthenticated, isLoading } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loginLoading, setLoginLoading] = useState(false);
+    const [loginError, setLoginError] = useState('');
     const [showPopup, setShowPopup] = useState(false);
+    const [showSignupModal, setShowSignupModal] = useState(false);
+    const [signupLoading, setSignupLoading] = useState(false);
+    const [signupError, setSignupError] = useState('');
 
-    const handleLogin = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (!isLoading && isAuthenticated) {
+            router.push('/');
+        }
+    }, [isAuthenticated, isLoading, router]);
+
+    // Signup form states
+    const [signupData, setSignupData] = useState({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        memberName: '',
+        handle: '',
+        displayName: '',
+        bio: '',
+        location: '',
+        websiteUrl: '',
+        birthDate: '',
+        gender: '',
+        timezone: 'Asia/Seoul',
+        languageCode: 'ko',
+        countryCode: 'KR',
+        privacyLevel: 'PUBLIC',
+        isActive: true,
+        avatarUrl: '',
+        coverUrl: ''
+    });
+
+    const handleLogin = async (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>) => {
         e.preventDefault();
 
         if (!email || !password) {
-            alert('이메일과 비밀번호를 모두 입력해주세요.');
+            setLoginError('이메일과 비밀번호를 모두 입력해주세요.');
             return;
         }
 
-        // 여기에 실제 로그인 로직을 추가하세요
-        console.log('로그인 시도:', { email, password });
-        alert('로그인 기능이 구현되지 않았습니다.');
+        setLoginLoading(true);
+        setLoginError('');
+
+        try {
+            await login({ email, password });
+            // Redirect will be handled by useEffect above
+        } catch (error) {
+            console.error('Login error:', error);
+            setLoginError(error instanceof Error ? error.message : '로그인에 실패했습니다.');
+        } finally {
+            setLoginLoading(false);
+        }
     };
 
     const handleSignup = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
-        // 여기에 회원가입 페이지로 이동하는 로직을 추가하세요
-        console.log('회원가입 페이지로 이동');
-        alert('회원가입 페이지로 이동합니다.');
+        setShowSignupModal(true);
+        setSignupError('');
+    };
+
+    const handleSignupSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        // Validation
+        if (signupData.password !== signupData.confirmPassword) {
+            setSignupError('비밀번호가 일치하지 않습니다.');
+            return;
+        }
+
+        if (signupData.password.length < 8) {
+            setSignupError('비밀번호는 최소 8자 이상이어야 합니다.');
+            return;
+        }
+
+        setSignupLoading(true);
+        setSignupError('');
+
+        try {
+            const response = await fetch('http://localhost:8084/api/authentication/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: signupData.email,
+                    password: signupData.password,
+                    memberName: signupData.memberName,
+                    handle: signupData.handle,
+                    displayName: signupData.displayName,
+                    bio: signupData.bio,
+                    location: signupData.location,
+                    websiteUrl: signupData.websiteUrl,
+                    birthDate: signupData.birthDate,
+                    gender: signupData.gender || 'OTHER',
+                    timezone: signupData.timezone,
+                    languageCode: signupData.languageCode,
+                    countryCode: signupData.countryCode,
+                    privacyLevel: signupData.privacyLevel,
+                    isActive: signupData.isActive,
+                    avatarUrl: signupData.avatarUrl,
+                    coverUrl: signupData.coverUrl
+                })
+            });
+
+            if (response.ok) {
+                alert('회원가입이 완료되었습니다. 로그인해주세요.');
+                setShowSignupModal(false);
+                // Reset form
+                setSignupData({
+                    email: '',
+                    password: '',
+                    confirmPassword: '',
+                    memberName: '',
+                    handle: '',
+                    displayName: '',
+                    bio: '',
+                    location: '',
+                    websiteUrl: '',
+                    birthDate: '',
+                    gender: '',
+                    timezone: 'Asia/Seoul',
+                    languageCode: 'ko',
+                    countryCode: 'KR',
+                    privacyLevel: 'PUBLIC',
+                    isActive: true,
+                    avatarUrl: '',
+                    coverUrl: ''
+                });
+            } else {
+                const errorData = await response.json();
+                setSignupError(errorData.message || '회원가입에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('Signup error:', error);
+            setSignupError('네트워크 오류가 발생했습니다.');
+        } finally {
+            setSignupLoading(false);
+        }
+    };
+
+    const handleSignupInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setSignupData(prev => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
     const handleGoogleLogin = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -38,7 +172,7 @@ export default function Page() {
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-            handleLogin(e as any);
+            handleLogin(e);
         }
     };
 
@@ -65,6 +199,12 @@ export default function Page() {
                         </div>
 
                         <div className={style.form_container}>
+                            {loginError && (
+                                <div className={style.error_message}>
+                                    {loginError}
+                                </div>
+                            )}
+
                             <div className={style.input_group}>
                                 <input
                                     type="email"
@@ -74,6 +214,7 @@ export default function Page() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     onKeyPress={handleKeyPress}
+                                    disabled={loginLoading}
                                 />
                             </div>
                             <div className={style.input_group}>
@@ -85,10 +226,15 @@ export default function Page() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     onKeyPress={handleKeyPress}
+                                    disabled={loginLoading}
                                 />
                             </div>
-                            <button className={style.login_button} onClick={handleLogin}>
-                                로그인
+                            <button
+                                className={style.login_button}
+                                onClick={handleLogin}
+                                disabled={loginLoading}
+                            >
+                                {loginLoading ? '로그인 중...' : '로그인'}
                             </button>
                         </div>
 
@@ -128,6 +274,197 @@ export default function Page() {
                     </button>
                 </div>
             </div>
+
+            {/* Signup Modal */}
+            {showSignupModal && (
+                <div className={style.modal_overlay} onClick={(e) => {
+                    if (e.target === e.currentTarget) setShowSignupModal(false);
+                }}>
+                    <div className={style.signup_modal}>
+                        <button
+                            className={style.close_button}
+                            onClick={() => setShowSignupModal(false)}
+                        >
+                            ✕
+                        </button>
+                        <h2>Dailyfeed 회원가입</h2>
+
+                        {signupError && (
+                            <div className={style.error_message}>
+                                {signupError}
+                            </div>
+                        )}
+
+                        <form onSubmit={handleSignupSubmit}>
+                            <div className={style.form_section}>
+                                <h3>필수 정보</h3>
+
+                                <div className={style.form_group}>
+                                    <label>이메일 *</label>
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={signupData.email}
+                                        onChange={handleSignupInputChange}
+                                        required
+                                        placeholder="example@email.com"
+                                    />
+                                </div>
+
+                                <div className={style.form_group}>
+                                    <label>비밀번호 *</label>
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={signupData.password}
+                                        onChange={handleSignupInputChange}
+                                        required
+                                        placeholder="최소 8자 이상, 대소문자, 숫자, 특수문자 포함"
+                                    />
+                                </div>
+
+                                <div className={style.form_group}>
+                                    <label>비밀번호 확인 *</label>
+                                    <input
+                                        type="password"
+                                        name="confirmPassword"
+                                        value={signupData.confirmPassword}
+                                        onChange={handleSignupInputChange}
+                                        required
+                                        placeholder="비밀번호를 다시 입력하세요"
+                                    />
+                                </div>
+
+                                <div className={style.form_group}>
+                                    <label>이름 *</label>
+                                    <input
+                                        type="text"
+                                        name="memberName"
+                                        value={signupData.memberName}
+                                        onChange={handleSignupInputChange}
+                                        required
+                                        placeholder="실제 이름"
+                                    />
+                                </div>
+
+                                <div className={style.form_group}>
+                                    <label>핸들 (사용자명) *</label>
+                                    <input
+                                        type="text"
+                                        name="handle"
+                                        value={signupData.handle}
+                                        onChange={handleSignupInputChange}
+                                        required
+                                        placeholder="@handle (영문, 숫자, 언더스코어만 가능)"
+                                        pattern="[a-zA-Z0-9_]+"
+                                    />
+                                </div>
+
+                                <div className={style.form_group}>
+                                    <label>표시 이름 *</label>
+                                    <input
+                                        type="text"
+                                        name="displayName"
+                                        value={signupData.displayName}
+                                        onChange={handleSignupInputChange}
+                                        required
+                                        placeholder="프로필에 표시될 이름"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={style.form_section}>
+                                <h3>선택 정보</h3>
+
+                                <div className={style.form_group}>
+                                    <label>자기소개</label>
+                                    <textarea
+                                        name="bio"
+                                        value={signupData.bio}
+                                        onChange={handleSignupInputChange}
+                                        placeholder="간단한 자기소개를 작성하세요"
+                                        rows={3}
+                                    />
+                                </div>
+
+                                <div className={style.form_group}>
+                                    <label>위치</label>
+                                    <input
+                                        type="text"
+                                        name="location"
+                                        value={signupData.location}
+                                        onChange={handleSignupInputChange}
+                                        placeholder="Seoul, Korea"
+                                    />
+                                </div>
+
+                                <div className={style.form_group}>
+                                    <label>웹사이트</label>
+                                    <input
+                                        type="url"
+                                        name="websiteUrl"
+                                        value={signupData.websiteUrl}
+                                        onChange={handleSignupInputChange}
+                                        placeholder="https://example.com"
+                                    />
+                                </div>
+
+                                <div className={style.form_group}>
+                                    <label>생년월일</label>
+                                    <input
+                                        type="date"
+                                        name="birthDate"
+                                        value={signupData.birthDate}
+                                        onChange={handleSignupInputChange}
+                                    />
+                                </div>
+
+                                <div className={style.form_group}>
+                                    <label>성별</label>
+                                    <select
+                                        name="gender"
+                                        value={signupData.gender}
+                                        onChange={handleSignupInputChange}
+                                    >
+                                        <option value="">선택하세요</option>
+                                        <option value="MALE">남성</option>
+                                        <option value="FEMALE">여성</option>
+                                        <option value="OTHER">기타</option>
+                                    </select>
+                                </div>
+
+                                <div className={style.form_group}>
+                                    <label>프로필 이미지 URL</label>
+                                    <input
+                                        type="url"
+                                        name="avatarUrl"
+                                        value={signupData.avatarUrl}
+                                        onChange={handleSignupInputChange}
+                                        placeholder="https://example.com/avatar.jpg"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className={style.form_actions}>
+                                <button
+                                    type="button"
+                                    className={style.cancel_button}
+                                    onClick={() => setShowSignupModal(false)}
+                                >
+                                    취소
+                                </button>
+                                <button
+                                    type="submit"
+                                    className={style.submit_button}
+                                    disabled={signupLoading}
+                                >
+                                    {signupLoading ? '가입 중...' : '가입하기'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

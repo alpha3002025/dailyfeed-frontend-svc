@@ -1,9 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './feed.module.css';
 
 export default function FeedPage() {
+  const { user, logout } = useAuth();
   const [activeMenu, setActiveMenu] = useState('follows');
   const [activeTab, setActiveTab] = useState('for-you');
 
@@ -18,8 +20,14 @@ export default function FeedPage() {
     setActiveMenu(menuType);
   };
 
+  const handleLogout = () => {
+    logout();
+    // Redirect to login will be handled by ProtectedRoute
+  };
+
   return (
-    <div className={styles.container}>
+    <div className={styles.pageWrapper}>
+      <div className={styles.container}>
       {/* 왼쪽 사이드바 */}
       <nav className={styles.sidebar}>
         <div className={styles.sidebarCard}>
@@ -80,6 +88,26 @@ export default function FeedPage() {
           </ul>
 
           <button className={styles.postButton}>✍️ Share thoughts</button>
+
+          {/* User info and logout */}
+          <div className={styles.userSection}>
+            <div className={styles.userInfo}>
+              <div className={styles.userAvatar}>
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt="Profile" />
+                ) : (
+                  <span>{user?.displayName?.charAt(0) || 'U'}</span>
+                )}
+              </div>
+              <div className={styles.userDetails}>
+                <div className={styles.userName}>{user?.displayName || user?.memberName}</div>
+                <div className={styles.userHandle}>@{user?.handle}</div>
+              </div>
+            </div>
+            <button className={styles.logoutButton} onClick={handleLogout}>
+              로그아웃
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -641,6 +669,7 @@ export default function FeedPage() {
           </div>
         </div>
       </aside>
+      </div>
     </div>
   );
 }

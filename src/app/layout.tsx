@@ -3,6 +3,7 @@ import Link from "next/link";
 import style from "./layout.module.css";
 import { BookData } from "@/types";
 import Image from "next/image";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 async function Footer(){
   const response = await fetch(
@@ -30,7 +31,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

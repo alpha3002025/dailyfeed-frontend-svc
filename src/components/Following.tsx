@@ -1,0 +1,142 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getFollowersFollowings, unfollowMember, FollowingMember } from '@/lib/auth';
+import styles from './Following.module.css';
+
+interface FollowingProps {
+  className?: string;
+}
+
+export default function Following({ className }: FollowingProps) {
+  const [followingMembers, setFollowingMembers] = useState<FollowingMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [unfollowingMembers, setUnfollowingMembers] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const fetchFollowingMembers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('🔄 Fetching following members...');
+        const followingList = await getFollowersFollowings();
+        console.log('✅ Following members response:', followingList);
+        setFollowingMembers(followingList);
+        console.log('👥 Set following members count:', followingList.length);
+      } catch (err) {
+        console.error('❌ Failed to fetch following members:', err);
+        setError('팔로잉 목록을 불러올 수 없습니다.');
+        setFollowingMembers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFollowingMembers();
+  }, []);
+
+  const handleUnfollow = async (member: FollowingMember) => {
+    const memberId = member.id;
+    const memberIdNumber = parseInt(memberId);
+
+    if (isNaN(memberIdNumber)) {
+      console.error('❌ Invalid member ID:', memberId);
+      setError('잘못된 사용자 ID입니다.');
+      return;
+    }
+
+    // Add loading state
+    const newUnfollowingState = new Set(unfollowingMembers);
+    newUnfollowingState.add(memberId);
+    setUnfollowingMembers(newUnfollowingState);
+
+    try {
+      console.log('🔄 Unfollowing member:', memberIdNumber);
+      await unfollowMember(memberIdNumber);
+      console.log('✅ Successfully unfollowed member:', memberIdNumber);
+
+      // Remove from list after successful unfollow
+      setFollowingMembers(prev => prev.filter(m => m.id !== memberId));
+    } catch (error) {
+      console.error('❌ Unfollow failed:', error);
+      setError('언팔로우에 실패했습니다.');
+
+      // Clear error after 3 seconds
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      // Remove loading state
+      const updatedUnfollowingState = new Set(unfollowingMembers);
+      updatedUnfollowingState.delete(memberId);
+      setUnfollowingMembers(updatedUnfollowingState);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={className}>
+        <div className={styles.sectionHeader}>👥 Following</div>
+        <div className={styles.loadingContainer}>
+          <div className={styles.loadingText}>로딩 중...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={className}>
+        <div className={styles.sectionHeader}>👥 Following</div>
+        <div className={styles.errorContainer}>
+          <div className={styles.errorText}>{error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (followingMembers.length === 0) {
+    return (
+      <div className={className}>
+        <div className={styles.sectionHeader}>👥 Following</div>
+        <div className={styles.emptyContainer}>
+          <div className={styles.emptyText}>팔로우 중인 사용자가 없습니다.</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      <div className={styles.sectionHeader}>👥 Following</div>
+      {followingMembers.map((member) => (
+        <div key={member.id} className={styles.followingItem}>
+          <div className={styles.memberAvatar}>
+            {member.avatarUrl ? (
+              <img src={member.avatarUrl} alt={member.displayName} />
+            ) : (
+              <span>{member.displayName?.charAt(0) || member.memberName?.charAt(0) || 'U'}</span>
+            )}
+          </div>
+          <div className={styles.memberInfo}>
+            <div className={styles.memberName}>
+              {member.displayName || member.memberName}
+            </div>
+            <div className={styles.memberHandle}>@{member.handle}</div>
+            {member.followersCount !== undefined && (
+              <div className={styles.followersCount}>
+                {member.followersCount.toLocaleString()} followers
+              </div>
+            )}
+          </div>
+          <button
+            className={styles.unfollowButton}
+            onClick={() => handleUnfollow(member)}
+            disabled={unfollowingMembers.has(member.id)}
+          >
+            {unfollowingMembers.has(member.id) ? '언팔로우 중...' : 'Unfollow'}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}

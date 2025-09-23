@@ -24,6 +24,7 @@ export interface RecommendedMember {
   bio?: string;
   avatarUrl?: string;
   followersCount?: number;
+  isFollowing?: boolean;
 }
 
 export interface RecommendedMembersApiResponse {
@@ -44,6 +45,37 @@ export interface RecommendedMembersResponse {
   size: number;
   totalElements?: number;
   totalPages?: number;
+}
+
+export interface FollowingMember {
+  id: string;
+  memberName: string;
+  handle: string;
+  displayName: string;
+  bio?: string;
+  avatarUrl?: string;
+  followersCount?: number;
+}
+
+export interface FollowersFollowingsResponse {
+  status: number;
+  result: string;
+  data: {
+    followers: {
+      content: FollowingMember[];
+      page: number;
+      size: number;
+      totalElements?: number;
+      totalPages?: number;
+    };
+    followings: {
+      content: FollowingMember[];
+      page: number;
+      size: number;
+      totalElements?: number;
+      totalPages?: number;
+    };
+  };
 }
 
 class AuthService {
@@ -260,12 +292,29 @@ class AuthService {
   }
 
   async authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const response = await fetch(url, {
+    const requestUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+    const headers = {
+      ...this.getAuthHeaders(),
+      ...options.headers,
+    };
+
+    console.log('🌐 Making authenticated request:', {
+      url: requestUrl,
+      method: options.method || 'GET',
+      headers: headers,
+      body: options.body
+    });
+
+    const response = await fetch(requestUrl, {
       ...options,
-      headers: {
-        ...this.getAuthHeaders(),
-        ...options.headers,
-      },
+      headers,
+    });
+
+    console.log('📡 Authenticated request response:', {
+      url: requestUrl,
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
     });
 
     // If we get a 401, the token might be expired
@@ -292,6 +341,12 @@ class AuthService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('🚨 API Error Details:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: url,
+        errorData: errorData
+      });
       throw new Error(errorData.message || `API call failed: ${response.status}`);
     }
 
@@ -306,6 +361,47 @@ class AuthService {
 
     // Extract data from the nested response structure
     return apiResponse.data;
+  }
+
+  // Follow a member
+  async followMember(memberIdToFollow: number): Promise<void> {
+    console.log('🔄 Follow API request:', { memberIdToFollow });
+    try {
+      const result = await this.apiCall<any>('/api/members/follow', {
+        method: 'POST',
+        body: JSON.stringify({ memberIdToFollow }),
+      });
+      console.log('✅ Follow API response:', result);
+    } catch (error) {
+      console.error('❌ Follow API error:', error);
+      throw error;
+    }
+  }
+
+  // Unfollow a member
+  async unfollowMember(memberIdToUnfollow: number): Promise<void> {
+    console.log('🔄 Unfollow API request:', { memberIdToUnfollow });
+    try {
+      const result = await this.apiCall<any>('/api/members/follow', {
+        method: 'DELETE',
+        body: JSON.stringify({ memberIdToUnfollow }),
+      });
+      console.log('✅ Unfollow API response:', result);
+    } catch (error) {
+      console.error('❌ Unfollow API error:', error);
+      throw error;
+    }
+  }
+
+  // Get followers and following lists
+  async getFollowersFollowings(): Promise<FollowingMember[]> {
+    console.log('🔄 Fetching followers-followings...');
+    const apiResponse = await this.apiCall<FollowersFollowingsResponse>('/api/members/followers-followings');
+    console.log('📦 Full API response:', apiResponse);
+    console.log('📦 Data structure:', apiResponse.data);
+    console.log('📦 Followings data:', apiResponse.data.followings);
+
+    return apiResponse.data.followings.content;
   }
 }
 
@@ -324,3 +420,9 @@ export const apiCall = <T>(endpoint: string, options?: RequestInit) =>
   authService.apiCall<T>(endpoint, options);
 export const getRecommendedMembers = (size?: number) =>
   authService.getRecommendedMembers(size);
+export const followMember = (memberIdToFollow: number) =>
+  authService.followMember(memberIdToFollow);
+export const unfollowMember = (memberIdToUnfollow: number) =>
+  authService.unfollowMember(memberIdToUnfollow);
+export const getFollowersFollowings = () =>
+  authService.getFollowersFollowings();

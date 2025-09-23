@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import WhoToFollow from '@/components/WhoToFollow';
+import Following from '@/components/Following';
 import styles from './feed.module.css';
 
 export default function FeedPage() {
@@ -626,39 +627,7 @@ export default function FeedPage() {
           </div>
         </div>
 
-        <div className={styles.sidebarSection}>
-          <div className={styles.sectionHeader}>🔥 What&apos;s trending</div>
-
-          <div className={styles.trendingItem}>
-            <div className={styles.trendingCategory}>Technology</div>
-            <div className={styles.trendingTitle}>AI Development</div>
-            <div className={styles.trendingPosts}>148.5K posts</div>
-          </div>
-
-          <div className={styles.trendingItem}>
-            <div className={styles.trendingCategory}>Business</div>
-            <div className={styles.trendingTitle}>Crypto Markets</div>
-            <div className={styles.trendingPosts}>89.2K posts</div>
-          </div>
-
-          <div className={styles.trendingItem}>
-            <div className={styles.trendingCategory}>Korea</div>
-            <div className={styles.trendingTitle}>한국경제</div>
-            <div className={styles.trendingPosts}>95.1K posts</div>
-          </div>
-
-          <div className={styles.trendingItem}>
-            <div className={styles.trendingCategory}>Environment</div>
-            <div className={styles.trendingTitle}>Climate Change</div>
-            <div className={styles.trendingPosts}>67.8K posts</div>
-          </div>
-
-          <div className={styles.trendingItem}>
-            <div className={styles.trendingCategory}>Sports</div>
-            <div className={styles.trendingTitle}>World Cup 2026</div>
-            <div className={styles.trendingPosts}>124.3K posts</div>
-          </div>
-        </div>
+        <Following className={styles.sidebarSection} />
 
         <WhoToFollow className={styles.sidebarSection} />
       </aside>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getRecommendedMembers, RecommendedMember } from '@/lib/auth';
+import { getRecommendedMembers, followMember, unfollowMember, RecommendedMember } from '@/lib/auth';
 import styles from './WhoToFollow.module.css';
 
 interface WhoToFollowProps {
@@ -12,6 +12,8 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
   const [members, setMembers] = useState<RecommendedMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [followingMembers, setFollowingMembers] = useState<Set<string>>(new Set());
+  const [loadingFollowActions, setLoadingFollowActions] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchRecommendedMembers = async () => {
@@ -35,6 +37,75 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
 
     fetchRecommendedMembers();
   }, []);
+
+  const handleFollowToggle = async (member: RecommendedMember) => {
+    console.log('🎯 Follow toggle clicked for member:', member);
+    const memberId = member.id;
+    const memberIdNumber = parseInt(memberId);
+
+    console.log('🔢 Member ID conversion:', {
+      originalId: memberId,
+      convertedId: memberIdNumber,
+      isValid: !isNaN(memberIdNumber)
+    });
+
+    if (isNaN(memberIdNumber)) {
+      console.error('❌ Invalid member ID:', memberId);
+      setError('잘못된 사용자 ID입니다.');
+      return;
+    }
+
+    // Check if trying to follow self (common cause of 403)
+    if (memberIdNumber === 1) { // This would need to be the actual current user's ID
+      console.warn('⚠️ Cannot follow yourself');
+      setError('자신을 팔로우할 수 없습니다.');
+      return;
+    }
+
+    // Optimistic UI update
+    const isCurrentlyFollowing = followingMembers.has(memberId);
+    const newFollowingState = new Set(followingMembers);
+
+    if (isCurrentlyFollowing) {
+      newFollowingState.delete(memberId);
+    } else {
+      newFollowingState.add(memberId);
+    }
+
+    setFollowingMembers(newFollowingState);
+
+    // Add loading state
+    const newLoadingState = new Set(loadingFollowActions);
+    newLoadingState.add(memberId);
+    setLoadingFollowActions(newLoadingState);
+
+    try {
+      if (isCurrentlyFollowing) {
+        console.log('🔄 Unfollowing member:', memberIdNumber);
+        await unfollowMember(memberIdNumber);
+        console.log('✅ Successfully unfollowed member:', memberIdNumber);
+      } else {
+        console.log('🔄 Following member:', memberIdNumber);
+        await followMember(memberIdNumber);
+        console.log('✅ Successfully followed member:', memberIdNumber);
+      }
+    } catch (error) {
+      console.error('❌ Follow/unfollow failed:', error);
+      // Revert optimistic update on error
+      setFollowingMembers(followingMembers);
+
+      // Show error message
+      setError(isCurrentlyFollowing ? '언팔로우에 실패했습니다.' : '팔로우에 실패했습니다.');
+
+      // Clear error after 3 seconds
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      // Remove loading state
+      const updatedLoadingState = new Set(loadingFollowActions);
+      updatedLoadingState.delete(memberId);
+      setLoadingFollowActions(updatedLoadingState);
+    }
+  };
 
   if (loading) {
     return (
@@ -95,8 +166,17 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
               </div>
             )}
           </div>
-          <button className={styles.followButton}>
-            Follow
+          <button
+            className={`${styles.followButton} ${
+              followingMembers.has(member.id) ? styles.followingButton : ''
+            }`}
+            onClick={() => handleFollowToggle(member)}
+            disabled={loadingFollowActions.has(member.id)}
+          >
+            {loadingFollowActions.has(member.id)
+              ? (followingMembers.has(member.id) ? '언팔로우 중...' : '팔로우 중...')
+              : (followingMembers.has(member.id) ? 'Following' : 'Follow')
+            }
           </button>
         </div>
       ))}

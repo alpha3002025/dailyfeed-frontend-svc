@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import WhoToFollow from '@/components/WhoToFollow';
 import styles from './feed.module.css';
 
 export default function FeedPage() {
@@ -659,24 +660,7 @@ export default function FeedPage() {
           </div>
         </div>
 
-        <div className={styles.sidebarSection}>
-          <div className={styles.sectionHeader}>👥 Who to follow</div>
-
-          <div className={styles.trendingItem}>
-            <div className={styles.trendingTitle}>@elonmusk</div>
-            <div className={styles.trendingPosts}>CEO of Tesla & SpaceX</div>
-          </div>
-
-          <div className={styles.trendingItem}>
-            <div className={styles.trendingTitle}>@sundarpichai</div>
-            <div className={styles.trendingPosts}>CEO of Google</div>
-          </div>
-
-          <div className={styles.trendingItem}>
-            <div className={styles.trendingTitle}>@satyanadella</div>
-            <div className={styles.trendingPosts}>CEO of Microsoft</div>
-          </div>
-        </div>
+        <WhoToFollow className={styles.sidebarSection} />
       </aside>
       </div>
     </div>

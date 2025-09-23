@@ -22,6 +22,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in on app start
@@ -29,17 +30,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const token = authService.getToken();
         if (token) {
-          // You might want to validate the token with the server here
-          // For now, we'll just set isAuthenticated based on token presence
-          // In a real app, you'd decode the JWT or call a /me endpoint
+          // Set authenticated state based on token presence
+          setIsAuthenticated(true);
           setIsLoading(false);
         } else {
+          setIsAuthenticated(false);
           setIsLoading(false);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
         authService.logout();
         setUser(null);
+        setIsAuthenticated(false);
         setIsLoading(false);
       }
     };
@@ -49,14 +51,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (credentials: LoginCredentials) => {
     try {
+      console.log('🔑 AuthContext: Starting login process');
       setIsLoading(true);
       const { user: userData } = await authService.login(credentials);
+      console.log('👤 AuthContext: Login successful, setting user:', userData);
       setUser(userData);
+      setIsAuthenticated(true);
+      console.log('✅ AuthContext: Auth state updated - isAuthenticated: true');
     } catch (error) {
+      console.error('❌ AuthContext: Login failed:', error);
       setUser(null);
+      setIsAuthenticated(false);
       throw error;
     } finally {
       setIsLoading(false);
+      console.log('🏁 AuthContext: Login process finished, isLoading: false');
     }
   };
 
@@ -65,10 +74,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoggingOut(true);
       await authService.logout();
       setUser(null);
+      setIsAuthenticated(false);
     } catch (error) {
       console.error('Logout error:', error);
       // Even if logout fails, clear the user locally
       setUser(null);
+      setIsAuthenticated(false);
     } finally {
       setIsLoggingOut(false);
     }
@@ -76,7 +87,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value: AuthContextType = {
     user,
-    isAuthenticated: authService.isAuthenticated(),
+    isAuthenticated,
     isLoading,
     isLoggingOut,
     login,

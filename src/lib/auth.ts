@@ -70,6 +70,23 @@ export interface Post {
   sharesCount?: number;
 }
 
+export interface PostDetail extends Post {
+  memberId?: number;
+  memberAvatarUrl?: string;
+}
+
+export interface Comment {
+  id: number;
+  postId: number;
+  content: string;
+  memberName?: string;
+  memberHandle?: string;
+  memberDisplayName?: string;
+  memberAvatarUrl?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface PostsResponse {
   status: number;
   result: string;
@@ -521,6 +538,85 @@ class AuthService {
       throw error;
     }
   }
+
+  // Get post detail by ID
+  async getPostDetail(postId: number): Promise<PostDetail> {
+    console.log('📄 Fetching post detail for ID:', postId);
+    try {
+      const response = await fetch(`http://localhost:8081/api/posts/${postId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to fetch post detail:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to fetch post detail: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Post detail fetched successfully:', result);
+
+      // Handle different response structures
+      if (result.data) {
+        return result.data;
+      } else {
+        return result;
+      }
+    } catch (error) {
+      console.error('❌ Error fetching post detail:', error);
+      throw error;
+    }
+  }
+
+  // Get comments for a post
+  async getPostComments(postId: number): Promise<Comment[]> {
+    console.log('💬 Fetching comments for post ID:', postId);
+    try {
+      const response = await fetch(`http://localhost:8081/api/comments/post/${postId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to fetch comments:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to fetch comments: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Comments fetched successfully:', result);
+
+      // Handle different response structures
+      if (result.data && Array.isArray(result.data)) {
+        return result.data;
+      } else if (result.data && result.data.content) {
+        return result.data.content;
+      } else if (Array.isArray(result)) {
+        return result;
+      } else {
+        console.warn('Unexpected response structure:', result);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ Error fetching comments:', error);
+      throw error;
+    }
+  }
 }
 
 // Create a singleton instance
@@ -548,3 +644,7 @@ export const createPost = (content: string) =>
   authService.createPost(content);
 export const getUserPosts = (page?: number, size?: number) =>
   authService.getUserPosts(page, size);
+export const getPostDetail = (postId: number) =>
+  authService.getPostDetail(postId);
+export const getPostComments = (postId: number) =>
+  authService.getPostComments(postId);

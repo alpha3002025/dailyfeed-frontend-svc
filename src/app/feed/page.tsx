@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import WhoToFollow from '@/components/WhoToFollow';
 import Following from '@/components/Following';
@@ -9,8 +10,16 @@ import type { Post } from '@/lib/auth';
 import styles from './feed.module.css';
 
 export default function FeedPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, logout, isLoggingOut } = useAuth();
-  const [activeMenu, setActiveMenu] = useState('follows');
+  // Initialize activeMenu from URL query parameter or default to 'follows'
+  const menuFromUrl = searchParams.get('menu');
+  const initialMenu = menuFromUrl && ['follows', 'popular', 'comments', 'feed'].includes(menuFromUrl)
+    ? menuFromUrl
+    : 'follows';
+
+  const [activeMenu, setActiveMenu] = useState(initialMenu);
   const [activeTab, setActiveTab] = useState('for-you');
   const [postContent, setPostContent] = useState('');
   const [isPosting, setIsPosting] = useState(false);
@@ -29,6 +38,10 @@ export default function FeedPage() {
 
   const handleMenuClick = (menuType: string) => {
     setActiveMenu(menuType);
+    // Update URL without triggering navigation
+    const newUrl = `/feed?menu=${menuType}`;
+    window.history.pushState(null, '', newUrl);
+
     if (menuType === 'feed') {
       fetchMyPosts();
     }
@@ -48,11 +61,25 @@ export default function FeedPage() {
     }
   };
 
-  // Load posts when component mounts if 'feed' is active
+  // Load posts when component mounts or when activeMenu changes
   useEffect(() => {
     if (activeMenu === 'feed') {
       fetchMyPosts();
     }
+  }, [activeMenu]);
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const menu = params.get('menu');
+      if (menu && ['follows', 'popular', 'comments', 'feed'].includes(menu)) {
+        setActiveMenu(menu);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const handlePostSubmit = async () => {
@@ -684,7 +711,12 @@ export default function FeedPage() {
                 };
 
                 return (
-                  <div key={post.id} className={styles.feedItem}>
+                  <div
+                    key={post.id}
+                    className={styles.feedItem}
+                    onClick={() => router.push(`/post/${post.id}`)}
+                    style={{ cursor: 'pointer' }}
+                  >
                     <div className={styles.feedContent}>
                       <div className={styles.avatar}>
                         {user?.avatarUrl ? (

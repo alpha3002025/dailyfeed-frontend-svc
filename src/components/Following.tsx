@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getFollowersFollowings, unfollowMember, FollowingMember } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './Following.module.css';
 
 interface FollowingProps {
@@ -9,6 +10,7 @@ interface FollowingProps {
 }
 
 export default function Following({ className }: FollowingProps) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [followingMembers, setFollowingMembers] = useState<FollowingMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,6 +18,28 @@ export default function Following({ className }: FollowingProps) {
 
   useEffect(() => {
     const fetchFollowingMembers = async () => {
+      console.log('🔍 Following useEffect triggered:', {
+        authLoading,
+        isAuthenticated,
+        timestamp: new Date().toISOString()
+      });
+
+      // Don't fetch if not authenticated or auth is still loading
+      if (authLoading) {
+        console.log('⏳ Auth still loading, waiting...');
+        return;
+      }
+
+      if (!isAuthenticated) {
+        console.log('❌ Not authenticated, skipping following members fetch');
+        setLoading(false);
+        setError(null);
+        setFollowingMembers([]);
+        return;
+      }
+
+      console.log('✅ Authenticated, proceeding with API call');
+
       try {
         setLoading(true);
         setError(null);
@@ -34,7 +58,7 @@ export default function Following({ className }: FollowingProps) {
     };
 
     fetchFollowingMembers();
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   const handleUnfollow = async (member: FollowingMember) => {
     const memberId = member.id;

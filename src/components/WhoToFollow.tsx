@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getRecommendedMembers, followMember, unfollowMember, RecommendedMember } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import styles from './WhoToFollow.module.css';
 
 interface WhoToFollowProps {
@@ -9,6 +10,7 @@ interface WhoToFollowProps {
 }
 
 export default function WhoToFollow({ className }: WhoToFollowProps) {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [members, setMembers] = useState<RecommendedMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +19,28 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
 
   useEffect(() => {
     const fetchRecommendedMembers = async () => {
+      console.log('🔍 WhoToFollow useEffect triggered:', {
+        authLoading,
+        isAuthenticated,
+        timestamp: new Date().toISOString()
+      });
+
+      // Don't fetch if not authenticated or auth is still loading
+      if (authLoading) {
+        console.log('⏳ Auth still loading, waiting...');
+        return;
+      }
+
+      if (!isAuthenticated) {
+        console.log('❌ Not authenticated, skipping recommended members fetch');
+        setLoading(false);
+        setError(null);
+        setMembers([]);
+        return;
+      }
+
+      console.log('✅ Authenticated, proceeding with API call');
+
       try {
         setLoading(true);
         setError(null);
@@ -36,7 +60,7 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
     };
 
     fetchRecommendedMembers();
-  }, []);
+  }, [isAuthenticated, authLoading]);
 
   const handleFollowToggle = async (member: RecommendedMember) => {
     console.log('🎯 Follow toggle clicked for member:', member);

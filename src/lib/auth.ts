@@ -262,7 +262,26 @@ class AuthService {
   }
 
   getToken(): string | null {
+    if (typeof window !== 'undefined') {
+      const storedToken = localStorage.getItem(TOKEN_KEY);
+
+      // Check if it's the temporary development token and clear it
+      if (storedToken && storedToken.includes('temp_signature_for_dev')) {
+        this.clearToken();
+        return null;
+      }
+
+      this.token = storedToken;
+    }
+
     return this.token;
+  }
+
+  private clearToken(): void {
+    this.token = null;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(TOKEN_KEY);
+    }
   }
 
   setToken(token: string): void {

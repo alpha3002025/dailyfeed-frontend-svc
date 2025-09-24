@@ -28,15 +28,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Check if user is already logged in on app start
     const initializeAuth = async () => {
       try {
+        console.log('🔄 AuthContext: Initializing auth...');
         const token = authService.getToken();
+        console.log('🔍 AuthContext: Token check result:', token ? 'found' : 'not found');
+
         if (token) {
-          // Set authenticated state based on token presence
+          console.log('✅ AuthContext: Setting authenticated state to TRUE');
           setIsAuthenticated(true);
           setIsLoading(false);
         } else {
+          console.log('❌ AuthContext: Setting authenticated state to FALSE');
           setIsAuthenticated(false);
           setIsLoading(false);
         }
+        console.log('🏁 AuthContext: Auth initialization complete');
       } catch (error) {
         console.error('Auth initialization error:', error);
         authService.logout();

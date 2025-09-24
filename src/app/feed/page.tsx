@@ -4,12 +4,17 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import WhoToFollow from '@/components/WhoToFollow';
 import Following from '@/components/Following';
+import { createPost } from '@/lib/auth';
 import styles from './feed.module.css';
 
 export default function FeedPage() {
   const { user, logout, isLoggingOut } = useAuth();
   const [activeMenu, setActiveMenu] = useState('follows');
   const [activeTab, setActiveTab] = useState('for-you');
+  const [postContent, setPostContent] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
+  const [postError, setPostError] = useState('');
+  const [postSuccess, setPostSuccess] = useState(false);
 
   const menuTitles = {
     'follows': "My follow's news",
@@ -20,6 +25,33 @@ export default function FeedPage() {
 
   const handleMenuClick = (menuType: string) => {
     setActiveMenu(menuType);
+  };
+
+  const handlePostSubmit = async () => {
+    if (!postContent.trim()) {
+      setPostError('글 내용을 입력해주세요.');
+      return;
+    }
+
+    setIsPosting(true);
+    setPostError('');
+    setPostSuccess(false);
+
+    try {
+      await createPost(postContent.trim());
+      setPostContent('');
+      setPostSuccess(true);
+      setTimeout(() => setPostSuccess(false), 3000);
+    } catch (error) {
+      console.error('Post creation failed:', error);
+      setPostError('글 작성에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  const handleShareClick = () => {
+    handlePostSubmit();
   };
 
   const handleLogout = async () => {
@@ -94,7 +126,18 @@ export default function FeedPage() {
             </li>
           </ul>
 
-          <button className={styles.postButton}>✍️ Share thoughts</button>
+          <button
+            className={styles.postButton}
+            onClick={() => {
+              const textarea = document.querySelector(`.${styles.composeTextarea}`) as HTMLTextAreaElement;
+              if (textarea) {
+                textarea.focus();
+                textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }}
+          >
+            ✍️ Share thoughts
+          </button>
 
           {/* User info and logout */}
           <div className={styles.userSection}>
@@ -148,12 +191,40 @@ export default function FeedPage() {
         {/* 포스트 작성 영역 */}
         <div className={styles.composeCard}>
           <div className={styles.composeContent}>
-            <div className={styles.avatar}>U</div>
+            <div className={styles.avatar}>
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt="Profile" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
+              ) : (
+                <span>{user?.displayName?.charAt(0) || user?.memberName?.charAt(0) || 'U'}</span>
+              )}
+            </div>
             <div className={styles.composeForm}>
               <textarea
                 className={styles.composeTextarea}
                 placeholder="What's on your mind today?"
+                value={postContent}
+                onChange={(e) => {
+                  setPostContent(e.target.value);
+                  setPostError('');
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.ctrlKey) {
+                    handlePostSubmit();
+                  }
+                }}
+                disabled={isPosting}
+                maxLength={500}
               />
+              {postError && (
+                <div style={{ color: '#e74c3c', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                  {postError}
+                </div>
+              )}
+              {postSuccess && (
+                <div style={{ color: '#27ae60', fontSize: '0.875rem', marginTop: '0.5rem' }}>
+                  ✅ 글이 성공적으로 작성되었습니다!
+                </div>
+              )}
               <div className={styles.composeActions}>
                 <div className={styles.actionIcons}>
                   <svg className={styles.actionIcon} viewBox="0 0 24 24">
@@ -166,7 +237,22 @@ export default function FeedPage() {
                     <path d="M8 9.5C8 8.119 8.672 7 9.5 7S11 8.119 11 9.5 10.328 12 9.5 12 8 10.881 8 9.5zm6.5 2.5c.828 0 1.5-1.119 1.5-2.5S15.328 7 14.5 7 13 8.119 13 9.5s.672 2.5 1.5 2.5zM12 17.5c2.33 0 4.3-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5zM12 3C6.477 3 2 7.477 2 13s4.477 10 10 10 10-4.477 10-10S17.523 3 12 3zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/>
                   </svg>
                 </div>
-                <button className={styles.postBtnSmall}>Share</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.75rem', color: postContent.length > 450 ? '#e74c3c' : '#888' }}>
+                    {postContent.length}/500
+                  </span>
+                  <button
+                    className={styles.postBtnSmall}
+                    onClick={handleShareClick}
+                    disabled={isPosting || !postContent.trim() || postContent.length > 500}
+                    style={{
+                      opacity: isPosting || !postContent.trim() || postContent.length > 500 ? 0.5 : 1,
+                      cursor: isPosting || !postContent.trim() || postContent.length > 500 ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {isPosting ? 'Sharing...' : 'Share'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -196,7 +282,7 @@ export default function FeedPage() {
                         248
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         1.2K
                       </div>
                       <div className={styles.actionBtn}>
@@ -231,7 +317,7 @@ export default function FeedPage() {
                         89
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         23
                       </div>
                       <div className={styles.actionBtn}>
@@ -270,7 +356,7 @@ export default function FeedPage() {
                         4.8K
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         892
                       </div>
                       <div className={styles.actionBtn}>
@@ -307,7 +393,7 @@ export default function FeedPage() {
                         3.7K
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         524
                       </div>
                       <div className={styles.actionBtn}>
@@ -342,7 +428,7 @@ export default function FeedPage() {
                         6.2K
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         1.3K
                       </div>
                       <div className={styles.actionBtn}>
@@ -381,7 +467,7 @@ export default function FeedPage() {
                         2.1K
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         8.7K
                       </div>
                       <div className={styles.actionBtn}>
@@ -416,7 +502,7 @@ export default function FeedPage() {
                         3.2K
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         12.8K
                       </div>
                       <div className={styles.actionBtn}>
@@ -451,7 +537,7 @@ export default function FeedPage() {
                         1.8K
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         6.3K
                       </div>
                       <div className={styles.actionBtn}>
@@ -486,7 +572,7 @@ export default function FeedPage() {
                         2.9K
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         9.4K
                       </div>
                       <div className={styles.actionBtn}>
@@ -525,7 +611,7 @@ export default function FeedPage() {
                         178
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         42
                       </div>
                       <div className={styles.actionBtn}>
@@ -560,7 +646,7 @@ export default function FeedPage() {
                         92
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         156
                       </div>
                       <div className={styles.actionBtn}>
@@ -595,7 +681,7 @@ export default function FeedPage() {
                         256
                       </div>
                       <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                         89
                       </div>
                       <div className={styles.actionBtn}>

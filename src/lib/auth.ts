@@ -422,6 +422,38 @@ class AuthService {
 
     return apiResponse.data.followings.content;
   }
+
+  // Create a new post
+  async createPost(content: string): Promise<void> {
+    console.log('📝 Creating new post:', content);
+    try {
+      const response = await fetch('http://localhost:8081/api/posts', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Post creation failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to create post: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Post created successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Post creation error:', error);
+      throw error;
+    }
+  }
 }
 
 // Create a singleton instance
@@ -445,3 +477,5 @@ export const unfollowMember = (memberIdToUnfollow: number) =>
   authService.unfollowMember(memberIdToUnfollow);
 export const getFollowersFollowings = () =>
   authService.getFollowersFollowings();
+export const createPost = (content: string) =>
+  authService.createPost(content);

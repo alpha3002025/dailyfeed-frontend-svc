@@ -57,6 +57,31 @@ export interface FollowingMember {
   followersCount?: number;
 }
 
+export interface Post {
+  id: number;
+  content: string;
+  memberName?: string;
+  memberHandle?: string;
+  memberDisplayName?: string;
+  createdAt: string;
+  updatedAt?: string;
+  likesCount?: number;
+  commentsCount?: number;
+  sharesCount?: number;
+}
+
+export interface PostsResponse {
+  status: number;
+  result: string;
+  data: {
+    content: Post[];
+    page: number;
+    size: number;
+    totalElements?: number;
+    totalPages?: number;
+  };
+}
+
 export interface FollowersFollowingsResponse {
   status: number;
   result: string;
@@ -454,6 +479,48 @@ class AuthService {
       throw error;
     }
   }
+
+  // Get user's posts
+  async getUserPosts(page: number = 0, size: number = 20): Promise<Post[]> {
+    console.log('📖 Fetching user posts...');
+    try {
+      const response = await fetch(`http://localhost:8081/api/posts?page=${page}&size=${size}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to fetch posts:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to fetch posts: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Posts fetched successfully:', result);
+
+      // Handle different response structures
+      if (result.data && result.data.content) {
+        return result.data.content;
+      } else if (result.content) {
+        return result.content;
+      } else if (Array.isArray(result)) {
+        return result;
+      } else {
+        console.warn('Unexpected response structure:', result);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ Error fetching posts:', error);
+      throw error;
+    }
+  }
 }
 
 // Create a singleton instance
@@ -479,3 +546,5 @@ export const getFollowersFollowings = () =>
   authService.getFollowersFollowings();
 export const createPost = (content: string) =>
   authService.createPost(content);
+export const getUserPosts = (page?: number, size?: number) =>
+  authService.getUserPosts(page, size);

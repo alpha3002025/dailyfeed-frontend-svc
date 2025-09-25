@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import WhoToFollow from '@/components/WhoToFollow';
 import Following from '@/components/Following';
-import { createPost, getUserPosts } from '@/lib/auth';
+import { createPost, getUserPosts, likePost, unlikePost, getFollowingTimelinePosts } from '@/lib/auth';
 import type { Post } from '@/lib/auth';
 import styles from './feed.module.css';
 
@@ -26,8 +26,12 @@ export default function FeedPage() {
   const [postError, setPostError] = useState('');
   const [postSuccess, setPostSuccess] = useState(false);
   const [myPosts, setMyPosts] = useState<Post[]>([]);
+  const [followingPosts, setFollowingPosts] = useState<Post[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+  const [isLoadingFollowingPosts, setIsLoadingFollowingPosts] = useState(false);
   const [postsError, setPostsError] = useState('');
+  const [followingPostsError, setFollowingPostsError] = useState('');
+  const [likingPostIds, setLikingPostIds] = useState<Set<number>>(new Set());
 
   const menuTitles = {
     'follows': "My follow's news",
@@ -44,6 +48,8 @@ export default function FeedPage() {
 
     if (menuType === 'feed') {
       fetchMyPosts();
+    } else if (menuType === 'follows') {
+      fetchFollowingPosts();
     }
   };
 
@@ -61,12 +67,29 @@ export default function FeedPage() {
     }
   };
 
+  const fetchFollowingPosts = async () => {
+    setIsLoadingFollowingPosts(true);
+    setFollowingPostsError('');
+    try {
+      const posts = await getFollowingTimelinePosts();
+      setFollowingPosts(posts);
+    } catch (error) {
+      console.error('Failed to fetch following posts:', error);
+      setFollowingPostsError('팔로잉 멤버들의 글을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingFollowingPosts(false);
+    }
+  };
+
   // Load posts when component mounts or when activeMenu changes
   useEffect(() => {
     if (activeMenu === 'feed') {
       fetchMyPosts();
+    } else if (activeMenu === 'follows') {
+      fetchFollowingPosts();
     }
   }, [activeMenu]);
+
 
   // Handle browser back/forward navigation
   useEffect(() => {
@@ -111,6 +134,65 @@ export default function FeedPage() {
 
   const handleShareClick = () => {
     handlePostSubmit();
+  };
+
+  const handleLikeToggle = async (e: React.MouseEvent, post: Post, source: 'myPosts' | 'followingPosts' = 'myPosts') => {
+    e.stopPropagation(); // Prevent navigation to post detail
+    e.preventDefault();
+
+    if (!user || likingPostIds.has(post.id)) return;
+
+    setLikingPostIds(prev => new Set(prev).add(post.id));
+
+    try {
+      if (post.isLiked) {
+        await unlikePost(post.id);
+        if (source === 'myPosts') {
+          setMyPosts(posts =>
+            posts.map(p =>
+              p.id === post.id
+                ? { ...p, isLiked: false, likesCount: Math.max(0, (p.likesCount || 0) - 1) }
+                : p
+            )
+          );
+        } else {
+          setFollowingPosts(posts =>
+            posts.map(p =>
+              p.id === post.id
+                ? { ...p, isLiked: false, likesCount: Math.max(0, (p.likesCount || 0) - 1) }
+                : p
+            )
+          );
+        }
+      } else {
+        await likePost(post.id);
+        if (source === 'myPosts') {
+          setMyPosts(posts =>
+            posts.map(p =>
+              p.id === post.id
+                ? { ...p, isLiked: true, likesCount: (p.likesCount || 0) + 1 }
+                : p
+            )
+          );
+        } else {
+          setFollowingPosts(posts =>
+            posts.map(p =>
+              p.id === post.id
+                ? { ...p, isLiked: true, likesCount: (p.likesCount || 0) + 1 }
+                : p
+            )
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+    } finally {
+      setLikingPostIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(post.id);
+        return newSet;
+      });
+    }
   };
 
   const handleLogout = async () => {
@@ -321,75 +403,134 @@ export default function FeedPage() {
         <div className={styles.feedContainer}>
           {activeMenu === 'follows' && (
             <div>
-              <div className={styles.feedItem}>
-                <div className={styles.feedContent}>
-                  <div className={styles.avatar}>W</div>
-                  <div className={styles.feedText}>
-                    <div className={styles.feedHeader}>
-                      <span className={styles.username}>Wall Street Mav</span>
-                      <span className={styles.handle}>@WallStreetMav</span>
-                      <span className={styles.timestamp}>• 19h</span>
-                    </div>
-                    <div className={styles.feedBody}>
-                      The &quot;green&quot; parties of Europe are creating significant economic challenges with their regulatory approach, leading to energy costs that are 3x higher than those in the USA. This trend raises important questions about balancing environmental goals with economic competitiveness.
-                      <br/><br/>
-                      Meanwhile, China continues to expand their manufacturing capabilities and global influence...
-                    </div>
-                    <div className={styles.feedActions}>
-                      <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"/></svg>
-                        248
-                      </div>
-                      <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
-                        1.2K
-                      </div>
-                      <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/></svg>
-                        5.6K
-                      </div>
-                      <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.29 3.3-1.42-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>
-                      </div>
-                    </div>
-                  </div>
+              {isLoadingFollowingPosts && (
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🔄</div>
+                  팔로잉 멤버들의 글을 불러오는 중...
                 </div>
-              </div>
+              )}
 
-              <div className={styles.feedItem}>
-                <div className={styles.feedContent}>
-                  <div className={styles.avatar}>S</div>
-                  <div className={styles.feedText}>
-                    <div className={styles.feedHeader}>
-                      <span className={styles.username}>Scarlett Johnson</span>
-                      <span className={styles.handle}>@scarlett4kids</span>
-                      <span className={styles.timestamp}>• 10h</span>
-                    </div>
-                    <div className={styles.feedBody}>
-                      💭 &quot;Waste no more time arguing what a good man should be. Be one.&quot;
-                      <br/><br/>
-                      This profound wisdom from Marcus Aurelius reminds us that action speaks louder than words. Instead of endless debates about ideals, we should embody the change we want to see. Sometimes the most powerful philosophy is simply living with integrity and purpose.
-                    </div>
-                    <div className={styles.feedActions}>
-                      <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"/></svg>
-                        89
+              {followingPostsError && (
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#e74c3c' }}>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⚠️</div>
+                  {followingPostsError}
+                  <button
+                    onClick={fetchFollowingPosts}
+                    style={{
+                      marginTop: '1rem',
+                      padding: '0.5rem 1rem',
+                      background: '#1d9bf0',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '20px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    다시 시도
+                  </button>
+                </div>
+              )}
+
+              {!isLoadingFollowingPosts && !followingPostsError && followingPosts.length === 0 && (
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📰</div>
+                  <div style={{ fontSize: '1.2rem', fontWeight: '500', marginBottom: '0.5rem' }}>
+                    팔로잉하는 멤버들의 새로운 소식이 없습니다
+                  </div>
+                  <div style={{ color: '#888' }}>
+                    더 많은 사람들을 팔로우하여 타임라인을 풍성하게 만들어보세요!
+                  </div>
+                </div>
+              )}
+
+              {!isLoadingFollowingPosts && !followingPostsError && followingPosts.map((post) => {
+                const formatDate = (dateString: string) => {
+                  const date = new Date(dateString);
+                  const now = new Date();
+                  const diff = now.getTime() - date.getTime();
+                  const hours = Math.floor(diff / (1000 * 60 * 60));
+                  const days = Math.floor(hours / 24);
+
+                  if (hours < 1) {
+                    const minutes = Math.floor(diff / (1000 * 60));
+                    return minutes <= 1 ? '방금 전' : `${minutes}분 전`;
+                  } else if (hours < 24) {
+                    return `${hours}시간 전`;
+                  } else if (days < 7) {
+                    return `${days}일 전`;
+                  } else {
+                    return date.toLocaleDateString('ko-KR');
+                  }
+                };
+
+                return (
+                  <div
+                    key={post.id}
+                    className={styles.feedItem}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className={styles.feedContent}>
+                      <div className={styles.avatar}>
+                        {post.memberDisplayName?.charAt(0) || post.memberName?.charAt(0) || 'U'}
                       </div>
-                      <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
-                        23
-                      </div>
-                      <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/></svg>
-                        312
-                      </div>
-                      <div className={styles.actionBtn}>
-                        <svg viewBox="0 0 24 24"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.29 3.3-1.42-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>
+                      <div className={styles.feedText}>
+                        <div
+                          className={styles.feedHeader}
+                          onClick={() => router.push(`/post/${post.id}`)}
+                        >
+                          <span className={styles.username}>
+                            {post.memberDisplayName || post.memberName || 'Unknown User'}
+                          </span>
+                          <span className={styles.handle}>@{post.memberHandle || 'unknown'}</span>
+                          <span className={styles.timestamp}>• {formatDate(post.createdAt)}</span>
+                        </div>
+                        <div
+                          className={styles.feedBody}
+                          onClick={() => router.push(`/post/${post.id}`)}
+                        >
+                          {post.content.split('\n').map((line, index) => (
+                            <span key={index}>
+                              {line}
+                              {index < post.content.split('\n').length - 1 && <br />}
+                            </span>
+                          ))}
+                        </div>
+                        <div className={styles.feedActions}>
+                          <div className={styles.actionBtn}>
+                            <svg viewBox="0 0 24 24"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"/></svg>
+                            {post.commentsCount || 0}
+                          </div>
+                          <div className={styles.actionBtn}>
+                            <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
+                            {post.sharesCount || 0}
+                          </div>
+                          <div
+                            className={styles.actionBtn}
+                            onClick={(e) => handleLikeToggle(e, post, 'followingPosts')}
+                            style={{
+                              cursor: 'pointer',
+                              opacity: likingPostIds.has(post.id) ? 0.5 : 1,
+                              color: post.isLiked ? '#e0245e' : 'inherit'
+                            }}
+                          >
+                            <svg viewBox="0 0 24 24" fill={post.isLiked ? '#e0245e' : 'none'}>
+                              {post.isLiked ? (
+                                <path d="M20.884 13.19c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
+                              ) : (
+                                <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
+                              )}
+                            </svg>
+                            {post.likesCount || 0}
+                          </div>
+                          <div className={styles.actionBtn}>
+                            <svg viewBox="0 0 24 24"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.29 3.3-1.42-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
           )}
 
@@ -714,7 +855,6 @@ export default function FeedPage() {
                   <div
                     key={post.id}
                     className={styles.feedItem}
-                    onClick={() => router.push(`/post/${post.id}`)}
                     style={{ cursor: 'pointer' }}
                   >
                     <div className={styles.feedContent}>
@@ -735,14 +875,20 @@ export default function FeedPage() {
                         )}
                       </div>
                       <div className={styles.feedText}>
-                        <div className={styles.feedHeader}>
+                        <div
+                          className={styles.feedHeader}
+                          onClick={() => router.push(`/post/${post.id}`)}
+                        >
                           <span className={styles.username}>
                             {user?.displayName || user?.memberName || 'Unknown User'}
                           </span>
                           <span className={styles.handle}>@{user?.handle || 'unknown'}</span>
                           <span className={styles.timestamp}>• {formatDate(post.createdAt)}</span>
                         </div>
-                        <div className={styles.feedBody}>
+                        <div
+                          className={styles.feedBody}
+                          onClick={() => router.push(`/post/${post.id}`)}
+                        >
                           {post.content.split('\n').map((line, index) => (
                             <span key={index}>
                               {line}
@@ -759,8 +905,22 @@ export default function FeedPage() {
                             <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
                             {post.sharesCount || 0}
                           </div>
-                          <div className={styles.actionBtn}>
-                            <svg viewBox="0 0 24 24"><path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/></svg>
+                          <div
+                            className={styles.actionBtn}
+                            onClick={(e) => handleLikeToggle(e, post, 'myPosts')}
+                            style={{
+                              cursor: 'pointer',
+                              opacity: likingPostIds.has(post.id) ? 0.5 : 1,
+                              color: post.isLiked ? '#e0245e' : 'inherit'
+                            }}
+                          >
+                            <svg viewBox="0 0 24 24" fill={post.isLiked ? '#e0245e' : 'none'}>
+                              {post.isLiked ? (
+                                <path d="M20.884 13.19c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
+                              ) : (
+                                <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
+                              )}
+                            </svg>
                             {post.likesCount || 0}
                           </div>
                           <div className={styles.actionBtn}>

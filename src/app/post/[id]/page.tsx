@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getPostDetail, getPostComments } from '@/lib/auth';
+import { getPostDetail, getPostComments, likePost, unlikePost } from '@/lib/auth';
 import type { PostDetail, Comment } from '@/lib/auth';
 import styles from './postDetail.module.css';
 
@@ -19,6 +19,7 @@ export default function PostDetailPage() {
   const [isLoadingComments, setIsLoadingComments] = useState(true);
   const [postError, setPostError] = useState('');
   const [commentsError, setCommentsError] = useState('');
+  const [isLiking, setIsLiking] = useState(false);
 
   useEffect(() => {
     if (postId) {
@@ -71,6 +72,34 @@ export default function PostDetailPage() {
       return `${days}일 전`;
     } else {
       return date.toLocaleDateString('ko-KR');
+    }
+  };
+
+  const handleLikeToggle = async () => {
+    if (!user || !post || isLiking) return;
+
+    setIsLiking(true);
+    try {
+      if (post.isLiked) {
+        await unlikePost(postId);
+        setPost({
+          ...post,
+          isLiked: false,
+          likesCount: Math.max(0, (post.likesCount || 0) - 1)
+        });
+      } else {
+        await likePost(postId);
+        setPost({
+          ...post,
+          isLiked: true,
+          likesCount: (post.likesCount || 0) + 1
+        });
+      }
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+      // Optionally show an error message to the user
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -151,9 +180,21 @@ export default function PostDetailPage() {
                 </svg>
                 <span>{post.sharesCount || 0} 공유</span>
               </div>
-              <div className={styles.statItem}>
-                <svg viewBox="0 0 24 24" width="18" height="18">
-                  <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
+              <div
+                className={styles.statItem}
+                onClick={handleLikeToggle}
+                style={{
+                  cursor: user ? 'pointer' : 'default',
+                  opacity: isLiking ? 0.5 : 1,
+                  color: post.isLiked ? '#e0245e' : 'inherit'
+                }}
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill={post.isLiked ? '#e0245e' : 'none'}>
+                  {post.isLiked ? (
+                    <path d="M20.884 13.19c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
+                  ) : (
+                    <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
+                  )}
                 </svg>
                 <span>{post.likesCount || 0} 좋아요</span>
               </div>

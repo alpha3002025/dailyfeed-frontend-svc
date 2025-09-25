@@ -68,11 +68,13 @@ export interface Post {
   likesCount?: number;
   commentsCount?: number;
   sharesCount?: number;
+  isLiked?: boolean;
 }
 
 export interface PostDetail extends Post {
   memberId?: number;
   memberAvatarUrl?: string;
+  isLiked?: boolean;
 }
 
 export interface Comment {
@@ -406,9 +408,18 @@ class AuthService {
         status: response.status,
         statusText: response.statusText,
         url: url,
-        errorData: errorData
+        errorData: errorData,
+        method: options.method,
+        body: options.body
       });
-      throw new Error(errorData.message || `API call failed: ${response.status}`);
+
+      // Try to extract error message from various possible locations
+      const errorMessage = errorData.message ||
+                          errorData.error ||
+                          errorData.data ||
+                          `API call failed: ${response.status}`;
+
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -427,14 +438,26 @@ class AuthService {
   // Follow a member
   async followMember(memberIdToFollow: number): Promise<void> {
     console.log('🔄 Follow API request:', { memberIdToFollow });
+    console.log('📤 Sending follow request with body:', JSON.stringify({ memberIdToFollow }));
+
     try {
       const result = await this.apiCall<any>('/api/members/follow', {
         method: 'POST',
         body: JSON.stringify({ memberIdToFollow }),
       });
       console.log('✅ Follow API response:', result);
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Follow API error:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response
+      });
+
+      // Check if it's a "cannot follow yourself" error
+      if (error.message && error.message.includes('자기')) {
+        throw new Error('자기 자신을 팔로우할 수 없습니다.');
+      }
       throw error;
     }
   }
@@ -521,18 +544,40 @@ class AuthService {
 
       const result = await response.json();
       console.log('✅ Posts fetched successfully:', result);
+      console.log('📊 Sample post data:', result.data?.content?.[0] || result.content?.[0] || result[0]);
 
       // Handle different response structures
+      let posts: Post[] = [];
       if (result.data && result.data.content) {
-        return result.data.content;
+        posts = result.data.content;
       } else if (result.content) {
-        return result.content;
+        posts = result.content;
       } else if (Array.isArray(result)) {
-        return result;
+        posts = result;
       } else {
         console.warn('Unexpected response structure:', result);
         return [];
       }
+
+      // Map backend field names to frontend field names
+      return posts.map(post => {
+        const mappedPost = {
+          id: post.id,
+          content: post.content,
+          memberName: post.authorName || post.memberName,
+          memberHandle: post.authorHandle || post.memberHandle,
+          memberDisplayName: post.authorName || post.memberDisplayName,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+          // Map count fields from backend naming to frontend naming
+          likesCount: post.likeCount ?? post.likesCount ?? 0,
+          commentsCount: post.commentCount ?? post.commentsCount ?? 0,
+          sharesCount: post.shareCount ?? post.sharesCount ?? 0,
+          isLiked: post.isLiked ?? false
+        };
+        console.log(`Post ${mappedPost.id} - likesCount: ${mappedPost.likesCount}, isLiked: ${mappedPost.isLiked}`);
+        return mappedPost;
+      });
     } catch (error) {
       console.error('❌ Error fetching posts:', error);
       throw error;
@@ -563,13 +608,35 @@ class AuthService {
 
       const result = await response.json();
       console.log('✅ Post detail fetched successfully:', result);
+      console.log('📊 Post detail data:', result.data || result);
 
       // Handle different response structures
+      let postDetail: PostDetail;
       if (result.data) {
-        return result.data;
+        postDetail = result.data;
       } else {
-        return result;
+        postDetail = result;
       }
+
+      // Map backend field names to frontend field names
+      const mappedPostDetail = {
+        id: postDetail.id,
+        content: postDetail.content,
+        memberName: postDetail.authorName || postDetail.memberName,
+        memberHandle: postDetail.authorHandle || postDetail.memberHandle,
+        memberDisplayName: postDetail.authorName || postDetail.memberDisplayName,
+        memberId: postDetail.authorId || postDetail.memberId,
+        memberAvatarUrl: postDetail.memberAvatarUrl,
+        createdAt: postDetail.createdAt,
+        updatedAt: postDetail.updatedAt,
+        // Map count fields from backend naming to frontend naming
+        likesCount: postDetail.likeCount ?? postDetail.likesCount ?? 0,
+        commentsCount: postDetail.commentCount ?? postDetail.commentsCount ?? 0,
+        sharesCount: postDetail.shareCount ?? postDetail.sharesCount ?? 0,
+        isLiked: postDetail.isLiked ?? false
+      };
+      console.log(`Post detail ${mappedPostDetail.id} - likesCount: ${mappedPostDetail.likesCount}, isLiked: ${mappedPostDetail.isLiked}`);
+      return mappedPostDetail;
     } catch (error) {
       console.error('❌ Error fetching post detail:', error);
       throw error;
@@ -617,6 +684,142 @@ class AuthService {
       throw error;
     }
   }
+
+  // Like a post
+  async likePost(postId: number): Promise<number | void> {
+    console.log('❤️ Liking post ID:', postId);
+    try {
+      const response = await fetch(`http://localhost:8081/api/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to like post:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to like post: ${response.status}`);
+      }
+
+      const result = await response.json().catch(() => ({}));
+      console.log('✅ Post liked successfully:', result);
+      // Return updated like count if provided by backend
+      if (result.data && typeof result.data === 'number') {
+        return result.data;
+      }
+    } catch (error) {
+      console.error('❌ Error liking post:', error);
+      throw error;
+    }
+  }
+
+  // Unlike a post
+  async unlikePost(postId: number): Promise<number | void> {
+    console.log('💔 Unliking post ID:', postId);
+    try {
+      const response = await fetch(`http://localhost:8081/api/posts/${postId}/like`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to unlike post:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to unlike post: ${response.status}`);
+      }
+
+      const result = await response.json().catch(() => ({}));
+      console.log('✅ Post unliked successfully:', result);
+      // Return updated like count if provided by backend
+      if (result.data && typeof result.data === 'number') {
+        return result.data;
+      }
+    } catch (error) {
+      console.error('❌ Error unliking post:', error);
+      throw error;
+    }
+  }
+
+  // Get following members' timeline posts
+  async getFollowingTimelinePosts(page: number = 0, size: number = 20): Promise<Post[]> {
+    console.log('📰 Fetching following timeline posts...');
+    try {
+      const response = await fetch(`http://localhost:8082/api/timeline/posts/followings?page=${page}&size=${size}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to fetch timeline posts:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to fetch timeline posts: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Timeline posts fetched successfully:', result);
+      console.log('📊 Sample timeline post data:', result.data?.content?.[0] || result.content?.[0] || result[0]);
+
+      // Handle different response structures
+      let posts: Post[] = [];
+      if (result.data && result.data.content) {
+        posts = result.data.content;
+      } else if (result.content) {
+        posts = result.content;
+      } else if (Array.isArray(result)) {
+        posts = result;
+      } else {
+        console.warn('Unexpected response structure:', result);
+        return [];
+      }
+
+      // Map backend field names to frontend field names (following same pattern as getUserPosts)
+      return posts.map(post => {
+        // Log the raw post data to debug field names
+        console.log('Raw timeline post data:', post);
+
+        const mappedPost = {
+          id: post.id,
+          content: post.content,
+          // Use authorName/authorHandle pattern consistent with other post APIs
+          memberName: post.authorName || post.memberName || post.author?.name,
+          memberHandle: post.authorHandle || post.memberHandle || post.author?.handle || post.handle,
+          memberDisplayName: post.authorName || post.memberDisplayName || post.author?.displayName || post.displayName,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+          // Map count fields from backend naming to frontend naming
+          likesCount: post.likeCount ?? post.likesCount ?? 0,
+          commentsCount: post.commentCount ?? post.commentsCount ?? 0,
+          sharesCount: post.shareCount ?? post.sharesCount ?? 0,
+          isLiked: post.isLiked ?? false
+        };
+        console.log(`Timeline Post ${mappedPost.id} - member: ${mappedPost.memberDisplayName} (@${mappedPost.memberHandle}), likesCount: ${mappedPost.likesCount}, isLiked: ${mappedPost.isLiked}`);
+        return mappedPost;
+      });
+    } catch (error) {
+      console.error('❌ Error fetching timeline posts:', error);
+      throw error;
+    }
+  }
 }
 
 // Create a singleton instance
@@ -648,3 +851,11 @@ export const getPostDetail = (postId: number) =>
   authService.getPostDetail(postId);
 export const getPostComments = (postId: number) =>
   authService.getPostComments(postId);
+export const likePost = (postId: number) =>
+  authService.likePost(postId);
+export const unlikePost = (postId: number) =>
+  authService.unlikePost(postId);
+
+// Get following members' timeline posts
+export const getFollowingTimelinePosts = (page?: number, size?: number) =>
+  authService.getFollowingTimelinePosts(page, size);

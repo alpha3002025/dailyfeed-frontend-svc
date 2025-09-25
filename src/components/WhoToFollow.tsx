@@ -10,7 +10,7 @@ interface WhoToFollowProps {
 }
 
 export default function WhoToFollow({ className }: WhoToFollowProps) {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [members, setMembers] = useState<RecommendedMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +80,16 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
     }
 
     // Check if trying to follow self (common cause of 403)
-    if (memberIdNumber === 1) { // This would need to be the actual current user's ID
+    // Get current user's ID - try different possible ID formats
+    const currentUserId = user?.id ? (typeof user.id === 'string' ? parseInt(user.id) : user.id) : null;
+
+    console.log('👤 Current user check:', {
+      currentUserId,
+      memberIdNumber,
+      userObject: user
+    });
+
+    if (currentUserId && memberIdNumber === currentUserId) {
       console.warn('⚠️ Cannot follow yourself');
       setError('자신을 팔로우할 수 없습니다.');
       return;

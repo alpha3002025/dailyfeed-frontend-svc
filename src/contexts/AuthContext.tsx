@@ -34,6 +34,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (token) {
           console.log('✅ AuthContext: Setting authenticated state to TRUE');
+          // For now, create a temporary user object from stored data
+          // In production, you'd fetch user details from an API endpoint
+          const storedEmail = localStorage.getItem('user_email') || 'user@example.com';
+          const storedHandle = localStorage.getItem('user_handle') || storedEmail.split('@')[0];
+          const tempUser: AuthUser = {
+            id: 'temp-id',
+            email: storedEmail,
+            memberName: storedHandle,
+            handle: storedHandle,
+            displayName: storedHandle,
+          };
+          setUser(tempUser);
           setIsAuthenticated(true);
           setIsLoading(false);
         } else {
@@ -62,6 +74,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('👤 AuthContext: Login successful, setting user:', userData);
       setUser(userData);
       setIsAuthenticated(true);
+      // Store user info for session persistence
+      localStorage.setItem('user_email', userData.email);
+      localStorage.setItem('user_handle', userData.handle);
       console.log('✅ AuthContext: Auth state updated - isAuthenticated: true');
     } catch (error) {
       console.error('❌ AuthContext: Login failed:', error);
@@ -80,11 +95,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       await authService.logout();
       setUser(null);
       setIsAuthenticated(false);
+      // Clear stored user info
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('user_handle');
     } catch (error) {
       console.error('Logout error:', error);
       // Even if logout fails, clear the user locally
       setUser(null);
       setIsAuthenticated(false);
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('user_handle');
     } finally {
       setIsLoggingOut(false);
     }

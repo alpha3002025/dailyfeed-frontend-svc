@@ -69,6 +69,15 @@ export interface Post {
   commentsCount?: number;
   sharesCount?: number;
   isLiked?: boolean;
+  // Additional fields that may come from the API
+  authorName?: string;
+  authorHandle?: string;
+  author?: {
+    name?: string;
+    handle?: string;
+    displayName?: string;
+  };
+  [key: string]: any; // Allow for other fields during debugging
 }
 
 export interface PostDetail extends Post {
@@ -753,9 +762,132 @@ class AuthService {
     }
   }
 
+  // Get most popular posts
+  async getMostPopularPosts(page: number = 0, size: number = 20): Promise<Post[]> {
+    try {
+      const response = await fetch(`http://localhost:8082/api/timeline/posts/most-popular?page=${page}&size=${size}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to fetch popular posts:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to fetch popular posts: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Handle different response structures
+      let posts: Post[] = [];
+      if (result.data && result.data.content) {
+        posts = result.data.content;
+      } else if (result.content) {
+        posts = result.content;
+      } else if (Array.isArray(result)) {
+        posts = result;
+      } else if (result.data && Array.isArray(result.data)) {
+        posts = result.data;
+      } else {
+        console.warn('Unexpected response structure:', result);
+        return [];
+      }
+
+      // Map backend field names to frontend field names
+      return posts.map(post => {
+        const mappedPost = {
+          id: post.id || post._id,
+          content: post.content,
+          memberName: post.authorName || post.writerName || post.userName || post.memberName || post.author?.name || post.writer?.name || post.user?.name || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          memberHandle: post.memberHandle || post.authorHandle || post.writerHandle || post.userHandle || post.author?.handle || post.writer?.handle || post.user?.handle || post.handle || (post.authorId ? `user${post.authorId}` : 'unknown'),
+          memberDisplayName: post.authorName || post.writerName || post.userName || post.displayName || post.memberDisplayName || post.author?.displayName || post.writer?.displayName || post.user?.displayName || post.memberName || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          createdAt: post.createdAt || post.createdDate || post.timestamp,
+          updatedAt: post.updatedAt || post.updatedDate,
+          authorId: post.authorId,
+          likesCount: post.likeCount ?? post.likesCount ?? 0,
+          commentsCount: post.commentCount ?? post.commentsCount ?? 0,
+          sharesCount: post.shareCount ?? post.sharesCount ?? 0,
+          isLiked: post.isLiked ?? false
+        };
+        return mappedPost;
+      });
+    } catch (error) {
+      console.error('❌ Error fetching popular posts:', error);
+      throw error;
+    }
+  }
+
+  // Get most commented posts
+  async getMostCommentedPosts(page: number = 0, size: number = 20): Promise<Post[]> {
+    try {
+      const response = await fetch(`http://localhost:8082/api/timeline/posts/most-commented?page=${page}&size=${size}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to fetch most commented posts:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to fetch most commented posts: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      // Handle different response structures
+      let posts: Post[] = [];
+      if (result.data && result.data.content) {
+        posts = result.data.content;
+      } else if (result.content) {
+        posts = result.content;
+      } else if (Array.isArray(result)) {
+        posts = result;
+      } else if (result.data && Array.isArray(result.data)) {
+        posts = result.data;
+      } else {
+        console.warn('Unexpected response structure:', result);
+        return [];
+      }
+
+      // Map backend field names to frontend field names
+      return posts.map(post => {
+        const mappedPost = {
+          id: post.id || post._id,
+          content: post.content,
+          memberName: post.authorName || post.writerName || post.userName || post.memberName || post.author?.name || post.writer?.name || post.user?.name || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          memberHandle: post.memberHandle || post.authorHandle || post.writerHandle || post.userHandle || post.author?.handle || post.writer?.handle || post.user?.handle || post.handle || (post.authorId ? `user${post.authorId}` : 'unknown'),
+          memberDisplayName: post.authorName || post.writerName || post.userName || post.displayName || post.memberDisplayName || post.author?.displayName || post.writer?.displayName || post.user?.displayName || post.memberName || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          createdAt: post.createdAt || post.createdDate || post.timestamp,
+          updatedAt: post.updatedAt || post.updatedDate,
+          authorId: post.authorId,
+          likesCount: post.likeCount ?? post.likesCount ?? 0,
+          commentsCount: post.commentCount ?? post.commentsCount ?? 0,
+          sharesCount: post.shareCount ?? post.sharesCount ?? 0,
+          isLiked: post.isLiked ?? false
+        };
+        return mappedPost;
+      });
+    } catch (error) {
+      console.error('❌ Error fetching most commented posts:', error);
+      throw error;
+    }
+  }
+
   // Get following members' timeline posts
   async getFollowingTimelinePosts(page: number = 0, size: number = 20): Promise<Post[]> {
-    console.log('📰 Fetching following timeline posts...');
     try {
       const response = await fetch(`http://localhost:8082/api/timeline/posts/followings?page=${page}&size=${size}`, {
         method: 'GET',
@@ -776,8 +908,6 @@ class AuthService {
       }
 
       const result = await response.json();
-      console.log('✅ Timeline posts fetched successfully:', result);
-      console.log('📊 Sample timeline post data:', result.data?.content?.[0] || result.content?.[0] || result[0]);
 
       // Handle different response structures
       let posts: Post[] = [];
@@ -794,25 +924,26 @@ class AuthService {
 
       // Map backend field names to frontend field names (following same pattern as getUserPosts)
       return posts.map(post => {
-        // Log the raw post data to debug field names
-        console.log('Raw timeline post data:', post);
+        // Map backend field names to frontend field names
 
         const mappedPost = {
-          id: post.id,
+          id: post.id || post._id, // MongoDB might use _id
           content: post.content,
-          // Use authorName/authorHandle pattern consistent with other post APIs
-          memberName: post.authorName || post.memberName || post.author?.name,
-          memberHandle: post.authorHandle || post.memberHandle || post.author?.handle || post.handle,
-          memberDisplayName: post.authorName || post.memberDisplayName || post.author?.displayName || post.displayName,
-          createdAt: post.createdAt,
-          updatedAt: post.updatedAt,
+          // Map author fields to member fields for consistent UI rendering
+          // Backend currently returns null for authorName and memberHandle, so use authorId as fallback
+          memberName: post.authorName || post.writerName || post.userName || post.memberName || post.author?.name || post.writer?.name || post.user?.name || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          memberHandle: post.memberHandle || post.authorHandle || post.writerHandle || post.userHandle || post.author?.handle || post.writer?.handle || post.user?.handle || post.handle || (post.authorId ? `user${post.authorId}` : 'unknown'),
+          memberDisplayName: post.authorName || post.writerName || post.userName || post.displayName || post.memberDisplayName || post.author?.displayName || post.writer?.displayName || post.user?.displayName || post.memberName || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          createdAt: post.createdAt || post.createdDate || post.timestamp,
+          updatedAt: post.updatedAt || post.updatedDate,
+          // Store authorId for future use
+          authorId: post.authorId,
           // Map count fields from backend naming to frontend naming
           likesCount: post.likeCount ?? post.likesCount ?? 0,
           commentsCount: post.commentCount ?? post.commentsCount ?? 0,
           sharesCount: post.shareCount ?? post.sharesCount ?? 0,
           isLiked: post.isLiked ?? false
         };
-        console.log(`Timeline Post ${mappedPost.id} - member: ${mappedPost.memberDisplayName} (@${mappedPost.memberHandle}), likesCount: ${mappedPost.likesCount}, isLiked: ${mappedPost.isLiked}`);
         return mappedPost;
       });
     } catch (error) {
@@ -859,3 +990,11 @@ export const unlikePost = (postId: number) =>
 // Get following members' timeline posts
 export const getFollowingTimelinePosts = (page?: number, size?: number) =>
   authService.getFollowingTimelinePosts(page, size);
+
+// Get most popular posts
+export const getMostPopularPosts = (page?: number, size?: number) =>
+  authService.getMostPopularPosts(page, size);
+
+// Get most commented posts
+export const getMostCommentedPosts = (page?: number, size?: number) =>
+  authService.getMostCommentedPosts(page, size);

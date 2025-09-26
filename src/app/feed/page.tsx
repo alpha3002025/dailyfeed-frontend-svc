@@ -28,7 +28,6 @@ export default function FeedPage() {
     : 'follows';
 
   const [activeMenu, setActiveMenu] = useState(initialMenu);
-  const [activeTab, setActiveTab] = useState('for-you');
   const [postContent, setPostContent] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [postError, setPostError] = useState('');
@@ -606,20 +605,6 @@ export default function FeedPage() {
             <h2>{menuTitles[activeMenu as keyof typeof menuTitles]}</h2>
           </div>
 
-          <div className={styles.headerTabs}>
-            <div
-              className={`${styles.tab} ${activeTab === 'for-you' ? styles.active : ''}`}
-              onClick={() => setActiveTab('for-you')}
-            >
-              For you
-            </div>
-            <div
-              className={`${styles.tab} ${activeTab === 'following' ? styles.active : ''}`}
-              onClick={() => setActiveTab('following')}
-            >
-              Following
-            </div>
-          </div>
         </div>
 
         {/* 포스트 작성 영역 - Profile 메뉴에서는 숨김 */}

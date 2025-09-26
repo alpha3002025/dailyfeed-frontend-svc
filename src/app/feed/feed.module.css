@@ -135,7 +135,8 @@
 /* 메인 컨텐츠 */
 .mainContent {
     margin-left: 312px;
-    width: calc(100% - 312px - 340px);
+    width: calc(100% - 312px - 320px);
+    max-width: 680px;
     min-height: 100vh;
     overflow-x: hidden;
 }

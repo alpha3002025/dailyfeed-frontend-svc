@@ -23,7 +23,7 @@ export default function FeedPage() {
   const { user, logout, isLoggingOut } = useAuth();
   // Initialize activeMenu from URL query parameter or default to 'follows'
   const menuFromUrl = searchParams.get('menu');
-  const initialMenu = menuFromUrl && ['follows', 'popular', 'comments', 'feed'].includes(menuFromUrl)
+  const initialMenu = menuFromUrl && ['follows', 'popular', 'comments', 'feed', 'profile'].includes(menuFromUrl)
     ? menuFromUrl
     : 'follows';
 
@@ -55,7 +55,8 @@ export default function FeedPage() {
     'follows': "My follow's news",
     'popular': 'Most Popular now',
     'comments': 'Most comments now',
-    'feed': 'My feed'
+    'feed': 'My feed',
+    'profile': 'My Profile'
   };
 
   const handleMenuClick = (menuType: string) => {
@@ -214,7 +215,7 @@ export default function FeedPage() {
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
       const menu = params.get('menu');
-      if (menu && ['follows', 'popular', 'comments', 'feed'].includes(menu)) {
+      if (menu && ['follows', 'popular', 'comments', 'feed', 'profile'].includes(menu)) {
         setActiveMenu(menu);
       }
     };
@@ -545,6 +546,18 @@ export default function FeedPage() {
                 <span className={styles.navText}>My feed</span>
               </a>
             </li>
+            <li className={styles.navItem}>
+              <a
+                href="#"
+                className={`${styles.navLink} ${activeMenu === 'profile' ? styles.active : ''}`}
+                onClick={(e) => { e.preventDefault(); handleMenuClick('profile'); }}
+              >
+                <svg className={styles.navIcon} viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                </svg>
+                <span className={styles.navText}>Profile</span>
+              </a>
+            </li>
           </ul>
 
           <button
@@ -609,8 +622,9 @@ export default function FeedPage() {
           </div>
         </div>
 
-        {/* 포스트 작성 영역 */}
-        <div className={styles.composeCard}>
+        {/* 포스트 작성 영역 - Profile 메뉴에서는 숨김 */}
+        {activeMenu !== 'profile' && (
+          <div className={styles.composeCard}>
           <div className={styles.composeContent}>
             <div className={styles.avatar}>
               {user?.avatarUrl ? (
@@ -678,6 +692,7 @@ export default function FeedPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Feed Content based on active menu */}
         <div className={styles.feedContainer}>
@@ -1130,6 +1145,274 @@ export default function FeedPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {activeMenu === 'profile' && (
+            <div style={{ padding: '1.5rem' }}>
+              {/* Profile Header */}
+              <div style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '2rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                marginBottom: '1.5rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem' }}>
+                  {/* Profile Image Section */}
+                  <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                    <div style={{
+                      width: '100px',
+                      height: '100px',
+                      borderRadius: '50%',
+                      background: user?.avatarUrl ? `url(${user.avatarUrl})` : '#1d9bf0',
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '2.5rem',
+                      color: 'white',
+                      fontWeight: 'bold',
+                      border: '3px solid #f0f0f0'
+                    }}>
+                      {!user?.avatarUrl && (user?.displayName?.charAt(0) || user?.memberName?.charAt(0) || 'U')}
+                    </div>
+                    <button
+                      style={{
+                        marginTop: '1rem',
+                        padding: '0.5rem 1rem',
+                        background: '#f0f0f0',
+                        border: 'none',
+                        borderRadius: '20px',
+                        cursor: 'not-allowed',
+                        fontSize: '0.875rem',
+                        color: '#666',
+                        opacity: 0.7
+                      }}
+                      disabled
+                      title="이미지 업로드 기능은 곧 추가될 예정입니다"
+                    >
+                      📷 Change Photo
+                    </button>
+                  </div>
+
+                  {/* Profile Info Section */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '0.5rem', wordBreak: 'break-word' }}>
+                      {user?.displayName || user?.memberName || 'Unknown User'}
+                    </h2>
+                    <p style={{ color: '#536471', fontSize: '1rem', marginBottom: '1.5rem', wordBreak: 'break-word' }}>
+                      @{user?.handle || 'unknown'}
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <label style={{ fontSize: '0.875rem', color: '#536471', display: 'block', marginBottom: '0.25rem' }}>
+                          Email
+                        </label>
+                        <p style={{
+                          fontSize: '1rem',
+                          fontWeight: '500',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: '100%',
+                          title: user?.email || 'No email provided'
+                        }}>
+                          {user?.email || 'No email provided'}
+                        </p>
+                      </div>
+
+                      <div style={{ minWidth: 0 }}>
+                        <label style={{ fontSize: '0.875rem', color: '#536471', display: 'block', marginBottom: '0.25rem' }}>
+                          Member ID
+                        </label>
+                        <p style={{
+                          fontSize: '1rem',
+                          fontWeight: '500',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: '100%',
+                          title: `#${user?.memberId || 'N/A'}`
+                        }}>
+                          #{user?.memberId || 'N/A'}
+                        </p>
+                      </div>
+
+                      <div style={{ minWidth: 0 }}>
+                        <label style={{ fontSize: '0.875rem', color: '#536471', display: 'block', marginBottom: '0.25rem' }}>
+                          Followers
+                        </label>
+                        <p style={{ fontSize: '1rem', fontWeight: '500' }}>
+                          {user?.followersCount || 0}
+                        </p>
+                      </div>
+
+                      <div style={{ minWidth: 0 }}>
+                        <label style={{ fontSize: '0.875rem', color: '#536471', display: 'block', marginBottom: '0.25rem' }}>
+                          Following
+                        </label>
+                        <p style={{ fontSize: '1rem', fontWeight: '500' }}>
+                          {user?.followingCount || 0}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Account Settings */}
+              <div style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '2rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                marginBottom: '1.5rem'
+              }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+                  Account Settings
+                </h3>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <button
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: 'white',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      cursor: 'not-allowed',
+                      fontSize: '1rem',
+                      textAlign: 'left',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      opacity: 0.7
+                    }}
+                    disabled
+                  >
+                    <span>✏️ Edit Profile</span>
+                    <span style={{ color: '#666', fontSize: '0.875rem' }}>Coming soon</span>
+                  </button>
+
+                  <button
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: 'white',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      cursor: 'not-allowed',
+                      fontSize: '1rem',
+                      textAlign: 'left',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      opacity: 0.7
+                    }}
+                    disabled
+                  >
+                    <span>🔐 Change Password</span>
+                    <span style={{ color: '#666', fontSize: '0.875rem' }}>Coming soon</span>
+                  </button>
+
+                  <button
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: 'white',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      cursor: 'not-allowed',
+                      fontSize: '1rem',
+                      textAlign: 'left',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      opacity: 0.7
+                    }}
+                    disabled
+                  >
+                    <span>🔔 Notification Settings</span>
+                    <span style={{ color: '#666', fontSize: '0.875rem' }}>Coming soon</span>
+                  </button>
+
+                  <button
+                    style={{
+                      padding: '0.75rem 1.5rem',
+                      background: 'white',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      cursor: 'not-allowed',
+                      fontSize: '1rem',
+                      textAlign: 'left',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      opacity: 0.7
+                    }}
+                    disabled
+                  >
+                    <span>🎨 Theme Settings</span>
+                    <span style={{ color: '#666', fontSize: '0.875rem' }}>Coming soon</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Account Info */}
+              <div style={{
+                background: 'white',
+                borderRadius: '16px',
+                padding: '2rem',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
+                  Account Information
+                </h3>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', color: '#536471' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Account Type</span>
+                    <span style={{ fontWeight: '500', color: '#000' }}>Standard</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Member Since</span>
+                    <span style={{ fontWeight: '500', color: '#000' }}>
+                      {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : 'Unknown'}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Last Login</span>
+                    <span style={{ fontWeight: '500', color: '#000' }}>
+                      {new Date().toLocaleDateString('ko-KR')}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Account Status</span>
+                    <span style={{ fontWeight: '500', color: '#22c55e' }}>✅ Active</span>
+                  </div>
+                </div>
+
+                <hr style={{ margin: '1.5rem 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    cursor: isLoggingOut ? 'not-allowed' : 'pointer',
+                    opacity: isLoggingOut ? 0.7 : 1
+                  }}
+                >
+                  {isLoggingOut ? '로그아웃 중...' : '🚪 로그아웃'}
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -14,6 +14,39 @@ export interface AuthUser {
   displayName: string;
   bio?: string;
   avatarUrl?: string;
+  memberId?: number;
+  location?: string;
+  websiteUrl?: string;
+  birthDate?: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  languageCode?: string;
+  countryCode?: string;
+  privacyLevel?: 'PUBLIC' | 'PRIVATE' | 'FRIENDS_ONLY';
+  followersCount?: number;
+  followingCount?: number;
+}
+
+export interface ProfileData {
+  memberName: string;
+  displayName: string;
+  bio?: string;
+  location?: string;
+  websiteUrl?: string;
+  birthDate?: string;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  languageCode?: string;
+  countryCode?: string;
+  privacyLevel?: 'PUBLIC' | 'PRIVATE' | 'FRIENDS_ONLY';
+  avatarUrl?: string;
+  previousAvatarUrl?: string[];
+}
+
+export interface HandleUpdateData {
+  newHandle: string;
+}
+
+export interface ImageDeleteRequest {
+  imageUrls: string[];
 }
 
 export interface RecommendedMember {
@@ -1012,6 +1045,104 @@ class AuthService {
     }
   }
 
+  async getMyProfile(): Promise<AuthUser> {
+    console.log('👤 Fetching my profile...');
+    try {
+      const response = await this.authenticatedFetch('http://localhost:8084/api/members/profile');
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch profile: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Profile fetched:', result);
+
+      const profileData = result.data || result;
+      return {
+        id: profileData.memberId?.toString() || profileData.id,
+        email: profileData.email,
+        memberName: profileData.memberName,
+        handle: profileData.handle,
+        displayName: profileData.displayName,
+        bio: profileData.bio,
+        avatarUrl: profileData.avatarUrl,
+        memberId: profileData.memberId,
+        location: profileData.location,
+        websiteUrl: profileData.websiteUrl,
+        birthDate: profileData.birthDate,
+        gender: profileData.gender,
+        languageCode: profileData.languageCode,
+        countryCode: profileData.countryCode,
+        privacyLevel: profileData.privacyLevel,
+        followersCount: profileData.followersCount,
+        followingCount: profileData.followingCount,
+      };
+    } catch (error) {
+      console.error('❌ Error fetching profile:', error);
+      throw error;
+    }
+  }
+
+  async updateProfile(profileData: ProfileData): Promise<void> {
+    console.log('✏️ Updating profile...', profileData);
+    try {
+      const response = await this.authenticatedFetch('http://localhost:8084/api/members/profile', {
+        method: 'PUT',
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update profile: ${response.status}`);
+      }
+
+      console.log('✅ Profile updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating profile:', error);
+      throw error;
+    }
+  }
+
+  async updateHandle(handleData: HandleUpdateData): Promise<void> {
+    console.log('✏️ Updating handle...', handleData);
+    try {
+      const response = await this.authenticatedFetch('http://localhost:8084/api/members/profile/handle', {
+        method: 'PUT',
+        body: JSON.stringify(handleData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update handle: ${response.status}`);
+      }
+
+      console.log('✅ Handle updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating handle:', error);
+      throw error;
+    }
+  }
+
+  async deleteImages(imageUrls: string[]): Promise<void> {
+    console.log('🗑️ Deleting images...', imageUrls);
+    try {
+      const response = await this.authenticatedFetch('http://localhost:8085/api/images/view/command/delete/in', {
+        method: 'POST',
+        body: JSON.stringify({ imageUrls }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to delete images: ${response.status}`);
+      }
+
+      console.log('✅ Images deleted successfully');
+    } catch (error) {
+      console.error('❌ Error deleting images:', error);
+      throw error;
+    }
+  }
+
   // Get following members' timeline posts
   async getFollowingTimelinePosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
@@ -1134,3 +1265,15 @@ export const getImageUrl = (imageId: string, thumbnail?: boolean) =>
 
 export const getImage = (imageId: string, thumbnail?: boolean) =>
   authService.getImage(imageId, thumbnail);
+
+export const getMyProfile = () =>
+  authService.getMyProfile();
+
+export const updateProfile = (profileData: ProfileData) =>
+  authService.updateProfile(profileData);
+
+export const updateHandle = (handleData: HandleUpdateData) =>
+  authService.updateHandle(handleData);
+
+export const deleteImages = (imageUrls: string[]) =>
+  authService.deleteImages(imageUrls);

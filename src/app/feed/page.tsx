@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import WhoToFollow from '@/components/WhoToFollow';
 import Following from '@/components/Following';
+import ProfileSection from '@/components/ProfileSection';
 import {
   createPost,
   getUserPosts,
@@ -14,9 +15,15 @@ import {
   getMostPopularPosts,
   getMostCommentedPosts,
   uploadProfileImage,
-  getImageUrl
+  getImageUrl,
+  getMyProfile,
+  updateProfile,
+  updateHandle,
+  deleteImages,
+  type ProfileData,
+  type HandleUpdateData
 } from '@/lib/auth';
-import type { Post } from '@/lib/auth';
+import type { Post, AuthUser } from '@/lib/auth';
 import styles from './feed.module.css';
 
 export default function FeedPage() {
@@ -51,6 +58,21 @@ export default function FeedPage() {
   const [uploadError, setUploadError] = useState<string>('');
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [profile, setProfile] = useState<AuthUser | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileFormData, setProfileFormData] = useState({
+    memberName: '',
+    displayName: '',
+    bio: '',
+    location: '',
+    birthDate: '',
+    websiteUrl: '',
+    avatarUrl: '',
+  });
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [handleFormValue, setHandleFormValue] = useState('');
+  const initialProfileRef = useRef<AuthUser | null>(null);
 
   // Add ref to prevent duplicate fetches
   const fetchInProgress = useRef<{ [key: string]: boolean }>({});
@@ -201,6 +223,26 @@ export default function FeedPage() {
     }
   };
 
+  const loadProfile = async () => {
+    try {
+      const profileData = await getMyProfile();
+      setProfile(profileData);
+      initialProfileRef.current = profileData;
+      setProfileFormData({
+        memberName: profileData.memberName || '',
+        displayName: profileData.displayName || '',
+        bio: profileData.bio || '',
+        location: profileData.location || '',
+        birthDate: profileData.birthDate || '',
+        websiteUrl: profileData.websiteUrl || '',
+        avatarUrl: profileData.avatarUrl || '',
+      });
+      setHandleFormValue(profileData.handle || '');
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+    }
+  };
+
   // Load posts when component mounts or when activeMenu changes
   useEffect(() => {
     if (activeMenu === 'feed') {
@@ -211,6 +253,8 @@ export default function FeedPage() {
       fetchPopularPosts();
     } else if (activeMenu === 'comments') {
       fetchCommentedPosts();
+    } else if (activeMenu === 'profile') {
+      loadProfile();
     }
   }, [activeMenu]);
 
@@ -544,28 +588,30 @@ export default function FeedPage() {
       const result = await uploadProfileImage(userMemberId, file);
       console.log('Upload result:', result);
 
-      // Update user context with new avatar URL
       if (result.imageUrl) {
-        console.log('✅ Updating user avatar with URL:', result.imageUrl);
-        await updateUser({
-          ...user,
-          avatarUrl: result.imageUrl
-        });
+        console.log('✅ Image uploaded, URL:', result.imageUrl);
 
-        // Force a re-render to immediately show the new image
-        setUploadError(''); // Clear any previous errors
+        if (isEditingProfile) {
+          setProfileFormData(prev => ({ ...prev, avatarUrl: result.imageUrl || '' }));
+          setUploadedImageUrls(prev => result.imageUrl ? [...prev, result.imageUrl] : prev);
+        } else {
+          if (user) {
+            await updateUser({
+              ...user,
+              avatarUrl: result.imageUrl
+            });
+          }
+        }
+
+        setUploadError('');
         setUploadSuccess(true);
-
-        // Clear success message after 3 seconds
         setTimeout(() => setUploadSuccess(false), 3000);
-
         console.log('✅ Profile image uploaded and updated successfully!');
       } else {
         console.error('❌ No image URL returned from upload');
         setUploadError('Image uploaded but URL not available');
       }
 
-      // Clear the file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -574,6 +620,119 @@ export default function FeedPage() {
       setUploadError('Failed to upload image. Please try again.');
     } finally {
       setIsUploadingImage(false);
+    }
+  };
+
+  const handleEditProfile = () => {
+    setIsEditingProfile(true);
+    setUploadedImageUrls([]);
+    setUploadError('');
+    setUploadSuccess(false);
+  };
+
+  const handleCancelProfileEdit = async () => {
+    if (uploadedImageUrls.length > 0) {
+      try {
+        await deleteImages(uploadedImageUrls);
+      } catch (err) {
+        console.error('Failed to delete uploaded images:', err);
+      }
+    }
+
+    if (initialProfileRef.current) {
+      setProfileFormData({
+        memberName: initialProfileRef.current.memberName || '',
+        displayName: initialProfileRef.current.displayName || '',
+        bio: initialProfileRef.current.bio || '',
+        location: initialProfileRef.current.location || '',
+        birthDate: initialProfileRef.current.birthDate || '',
+        websiteUrl: initialProfileRef.current.websiteUrl || '',
+        avatarUrl: initialProfileRef.current.avatarUrl || '',
+      });
+    }
+
+    setIsEditingProfile(false);
+    setUploadedImageUrls([]);
+    setUploadError('');
+    setUploadSuccess(false);
+  };
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsPosting(true);
+    setPostError('');
+    setPostSuccess(false);
+
+    try {
+      const previousAvatarUrl = uploadedImageUrls.filter(url => url !== profileFormData.avatarUrl);
+
+      const profileData: ProfileData = {
+        memberName: profileFormData.memberName,
+        displayName: profileFormData.displayName,
+        bio: profileFormData.bio || undefined,
+        location: profileFormData.location || undefined,
+        birthDate: profileFormData.birthDate || undefined,
+        websiteUrl: profileFormData.websiteUrl || undefined,
+        avatarUrl: profileFormData.avatarUrl || undefined,
+        previousAvatarUrl: previousAvatarUrl.length > 0 ? previousAvatarUrl : undefined,
+      };
+
+      await updateProfile(profileData);
+
+      const updatedProfile = await getMyProfile();
+      setProfile(updatedProfile);
+      initialProfileRef.current = updatedProfile;
+
+      if (user) {
+        await updateUser({
+          ...user,
+          ...updatedProfile,
+        });
+      }
+
+      setUploadedImageUrls([]);
+      setIsEditingProfile(false);
+      setPostSuccess(true);
+      setTimeout(() => setPostSuccess(false), 3000);
+    } catch (err: any) {
+      setPostError(err.message || 'Failed to update profile');
+      console.error(err);
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  const handleHandleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsPosting(true);
+    setPostError('');
+    setPostSuccess(false);
+
+    try {
+      const handleData: HandleUpdateData = {
+        newHandle: handleFormValue,
+      };
+
+      await updateHandle(handleData);
+
+      const updatedProfile = await getMyProfile();
+      setProfile(updatedProfile);
+      setHandleFormValue(updatedProfile.handle || '');
+
+      if (user) {
+        await updateUser({
+          ...user,
+          handle: updatedProfile.handle,
+        });
+      }
+
+      setPostSuccess(true);
+      setTimeout(() => setPostSuccess(false), 3000);
+    } catch (err: any) {
+      setPostError(err.message || 'Failed to update handle');
+      console.error(err);
+    } finally {
+      setIsPosting(false);
     }
   };
 
@@ -1225,300 +1384,26 @@ export default function FeedPage() {
           )}
 
           {activeMenu === 'profile' && (
-            <div style={{ padding: '1.5rem' }}>
-              {/* Profile Header */}
-              <div style={{
-                background: 'white',
-                borderRadius: '16px',
-                padding: '2rem',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                marginBottom: '1.5rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1.5rem' }}>
-                  {/* Profile Image Section */}
-                  <div style={{ textAlign: 'center', flexShrink: 0 }}>
-                    <div style={{
-                      width: '100px',
-                      height: '100px',
-                      borderRadius: '50%',
-                      backgroundImage: user?.avatarUrl ? `url(${user.avatarUrl})` : undefined,
-                      backgroundColor: user?.avatarUrl ? 'transparent' : '#1d9bf0',
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      backgroundRepeat: 'no-repeat',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '2.5rem',
-                      color: 'white',
-                      fontWeight: 'bold',
-                      border: '3px solid #f0f0f0'
-                    }}>
-                      {!user?.avatarUrl && (user?.displayName?.charAt(0) || user?.memberName?.charAt(0) || 'U')}
-                    </div>
-                    <button
-                      style={{
-                        marginTop: '1rem',
-                        padding: '0.5rem 1rem',
-                        background: isUploadingImage ? '#e0e0e0' : '#f0f0f0',
-                        border: 'none',
-                        borderRadius: '20px',
-                        cursor: isUploadingImage ? 'not-allowed' : 'pointer',
-                        fontSize: '0.875rem',
-                        color: '#333',
-                        transition: 'background 0.2s'
-                      }}
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploadingImage}
-                    >
-                      {isUploadingImage ? '⏳ Uploading...' : '📷 Change Photo'}
-                    </button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/gif"
-                      onChange={handleImageUpload}
-                      style={{ display: 'none' }}
-                    />
-                    {uploadError && (
-                      <div style={{
-                        marginTop: '0.5rem',
-                        color: '#e74c3c',
-                        fontSize: '0.75rem',
-                        textAlign: 'center'
-                      }}>
-                        {uploadError}
-                      </div>
-                    )}
-                    {uploadSuccess && (
-                      <div style={{
-                        marginTop: '0.5rem',
-                        color: '#27ae60',
-                        fontSize: '0.75rem',
-                        textAlign: 'center'
-                      }}>
-                        ✅ Image uploaded successfully!
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Profile Info Section */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '0.5rem', wordBreak: 'break-word' }}>
-                      {user?.displayName || user?.memberName || 'Unknown User'}
-                    </h2>
-                    <p style={{ color: '#536471', fontSize: '1rem', marginBottom: '1.5rem', wordBreak: 'break-word' }}>
-                      @{user?.handle || 'unknown'}
-                    </p>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-                      <div style={{ minWidth: 0 }}>
-                        <label style={{ fontSize: '0.875rem', color: '#536471', display: 'block', marginBottom: '0.25rem' }}>
-                          Email
-                        </label>
-                        <p style={{
-                          fontSize: '1rem',
-                          fontWeight: '500',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          maxWidth: '100%',
-                          title: user?.email || 'No email provided'
-                        }}>
-                          {user?.email || 'No email provided'}
-                        </p>
-                      </div>
-
-                      <div style={{ minWidth: 0 }}>
-                        <label style={{ fontSize: '0.875rem', color: '#536471', display: 'block', marginBottom: '0.25rem' }}>
-                          Member ID
-                        </label>
-                        <p style={{
-                          fontSize: '1rem',
-                          fontWeight: '500',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          maxWidth: '100%',
-                          title: `#${user?.memberId || 'N/A'}`
-                        }}>
-                          #{user?.memberId || 'N/A'}
-                        </p>
-                      </div>
-
-                      <div style={{ minWidth: 0 }}>
-                        <label style={{ fontSize: '0.875rem', color: '#536471', display: 'block', marginBottom: '0.25rem' }}>
-                          Followers
-                        </label>
-                        <p style={{ fontSize: '1rem', fontWeight: '500' }}>
-                          {user?.followersCount || 0}
-                        </p>
-                      </div>
-
-                      <div style={{ minWidth: 0 }}>
-                        <label style={{ fontSize: '0.875rem', color: '#536471', display: 'block', marginBottom: '0.25rem' }}>
-                          Following
-                        </label>
-                        <p style={{ fontSize: '1rem', fontWeight: '500' }}>
-                          {user?.followingCount || 0}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Account Settings */}
-              <div style={{
-                background: 'white',
-                borderRadius: '16px',
-                padding: '2rem',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                marginBottom: '1.5rem'
-              }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-                  Account Settings
-                </h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <button
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: 'white',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      cursor: 'not-allowed',
-                      fontSize: '1rem',
-                      textAlign: 'left',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      opacity: 0.7
-                    }}
-                    disabled
-                  >
-                    <span>✏️ Edit Profile</span>
-                    <span style={{ color: '#666', fontSize: '0.875rem' }}>Coming soon</span>
-                  </button>
-
-                  <button
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: 'white',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      cursor: 'not-allowed',
-                      fontSize: '1rem',
-                      textAlign: 'left',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      opacity: 0.7
-                    }}
-                    disabled
-                  >
-                    <span>🔐 Change Password</span>
-                    <span style={{ color: '#666', fontSize: '0.875rem' }}>Coming soon</span>
-                  </button>
-
-                  <button
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: 'white',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      cursor: 'not-allowed',
-                      fontSize: '1rem',
-                      textAlign: 'left',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      opacity: 0.7
-                    }}
-                    disabled
-                  >
-                    <span>🔔 Notification Settings</span>
-                    <span style={{ color: '#666', fontSize: '0.875rem' }}>Coming soon</span>
-                  </button>
-
-                  <button
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: 'white',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                      cursor: 'not-allowed',
-                      fontSize: '1rem',
-                      textAlign: 'left',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      opacity: 0.7
-                    }}
-                    disabled
-                  >
-                    <span>🎨 Theme Settings</span>
-                    <span style={{ color: '#666', fontSize: '0.875rem' }}>Coming soon</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Account Info */}
-              <div style={{
-                background: 'white',
-                borderRadius: '16px',
-                padding: '2rem',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-              }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>
-                  Account Information
-                </h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', color: '#536471' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Account Type</span>
-                    <span style={{ fontWeight: '500', color: '#000' }}>Standard</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Member Since</span>
-                    <span style={{ fontWeight: '500', color: '#000' }}>
-                      {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : 'Unknown'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Last Login</span>
-                    <span style={{ fontWeight: '500', color: '#000' }}>
-                      {new Date().toLocaleDateString('ko-KR')}
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Account Status</span>
-                    <span style={{ fontWeight: '500', color: '#22c55e' }}>✅ Active</span>
-                  </div>
-                </div>
-
-                <hr style={{ margin: '1.5rem 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
-
-                <button
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontWeight: '500',
-                    cursor: isLoggingOut ? 'not-allowed' : 'pointer',
-                    opacity: isLoggingOut ? 0.7 : 1
-                  }}
-                >
-                  {isLoggingOut ? '로그아웃 중...' : '🚪 로그아웃'}
-                </button>
-              </div>
-            </div>
+            <ProfileSection
+              profile={profile}
+              isEditingProfile={isEditingProfile}
+              profileFormData={profileFormData}
+              handleFormValue={handleFormValue}
+              isUploadingImage={isUploadingImage}
+              uploadError={uploadError}
+              uploadSuccess={uploadSuccess}
+              isPosting={isPosting}
+              postError={postError}
+              postSuccess={postSuccess}
+              fileInputRef={fileInputRef}
+              onImageUpload={handleImageUpload}
+              onEditProfile={handleEditProfile}
+              onCancelProfileEdit={handleCancelProfileEdit}
+              onProfileSubmit={handleProfileSubmit}
+              onHandleSubmit={handleHandleSubmit}
+              setProfileFormData={setProfileFormData}
+              setHandleFormValue={setHandleFormValue}
+            />
           )}
         </div>
       </main>

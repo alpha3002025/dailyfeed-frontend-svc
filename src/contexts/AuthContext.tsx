@@ -10,6 +10,7 @@ interface AuthContextType {
   isLoggingOut: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  updateUser: (userData: AuthUser) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,16 +35,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (token) {
           console.log('✅ AuthContext: Setting authenticated state to TRUE');
-          // For now, create a temporary user object from stored data
-          // In production, you'd fetch user details from an API endpoint
+          // Create user object from stored data
           const storedEmail = localStorage.getItem('user_email') || 'user@example.com';
           const storedHandle = localStorage.getItem('user_handle') || storedEmail.split('@')[0];
+          const storedMemberId = localStorage.getItem('user_member_id');
+          const storedAvatarUrl = localStorage.getItem('user_avatar_url');
+
           const tempUser: AuthUser = {
-            id: 'temp-id',
+            id: storedMemberId || 'temp-id',
             email: storedEmail,
             memberName: storedHandle,
             handle: storedHandle,
             displayName: storedHandle,
+            memberId: storedMemberId ? parseInt(storedMemberId) : undefined,
+            avatarUrl: storedAvatarUrl || undefined,
           };
           setUser(tempUser);
           setIsAuthenticated(true);
@@ -77,6 +82,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Store user info for session persistence
       localStorage.setItem('user_email', userData.email);
       localStorage.setItem('user_handle', userData.handle);
+      if (userData.memberId) {
+        localStorage.setItem('user_member_id', userData.memberId.toString());
+      }
+      if (userData.avatarUrl) {
+        localStorage.setItem('user_avatar_url', userData.avatarUrl);
+      }
       console.log('✅ AuthContext: Auth state updated - isAuthenticated: true');
     } catch (error) {
       console.error('❌ AuthContext: Login failed:', error);
@@ -98,6 +109,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Clear stored user info
       localStorage.removeItem('user_email');
       localStorage.removeItem('user_handle');
+      localStorage.removeItem('user_member_id');
+      localStorage.removeItem('user_avatar_url');
     } catch (error) {
       console.error('Logout error:', error);
       // Even if logout fails, clear the user locally
@@ -110,6 +123,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const updateUser = async (userData: AuthUser) => {
+    setUser(userData);
+    // Update stored user info if needed
+    if (userData.email) {
+      localStorage.setItem('user_email', userData.email);
+    }
+    if (userData.handle) {
+      localStorage.setItem('user_handle', userData.handle);
+    }
+    if (userData.memberId) {
+      localStorage.setItem('user_member_id', userData.memberId.toString());
+    }
+    if (userData.avatarUrl) {
+      localStorage.setItem('user_avatar_url', userData.avatarUrl);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     isAuthenticated,
@@ -117,6 +147,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoggingOut,
     login,
     logout,
+    updateUser,
   };
 
   return (

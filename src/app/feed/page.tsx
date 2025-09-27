@@ -12,7 +12,9 @@ import {
   unlikePost,
   getFollowingTimelinePosts,
   getMostPopularPosts,
-  getMostCommentedPosts
+  getMostCommentedPosts,
+  uploadProfileImage,
+  getImageUrl
 } from '@/lib/auth';
 import type { Post } from '@/lib/auth';
 import styles from './feed.module.css';
@@ -20,7 +22,7 @@ import styles from './feed.module.css';
 export default function FeedPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, logout, isLoggingOut } = useAuth();
+  const { user, logout, isLoggingOut, updateUser } = useAuth();
   // Initialize activeMenu from URL query parameter or default to 'follows'
   const menuFromUrl = searchParams.get('menu');
   const initialMenu = menuFromUrl && ['follows', 'popular', 'comments', 'feed', 'profile'].includes(menuFromUrl)
@@ -45,6 +47,10 @@ export default function FeedPage() {
   const [popularPostsError, setPopularPostsError] = useState('');
   const [commentedPostsError, setCommentedPostsError] = useState('');
   const [likingPostIds, setLikingPostIds] = useState<Set<number>>(new Set());
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Add ref to prevent duplicate fetches
   const fetchInProgress = useRef<{ [key: string]: boolean }>({});
@@ -485,6 +491,92 @@ export default function FeedPage() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('handleImageUpload triggered');
+    const file = e.target.files?.[0];
+    console.log('Selected file:', file);
+    console.log('Current user:', user);
+    console.log('User memberId:', user?.memberId);
+
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
+
+    // Temporary: Try to extract memberId from email if not present
+    let userMemberId = user?.memberId;
+    if (!userMemberId && user?.email) {
+      // Try to parse memberId from email pattern (e.g., case3_C@gmail.com -> 3)
+      const match = user.email.match(/case(\d+)_/);
+      if (match) {
+        userMemberId = parseInt(match[1]);
+        console.log('📌 Extracted memberId from email:', userMemberId);
+      }
+    }
+
+    if (!userMemberId) {
+      console.log('No user memberId available');
+      setUploadError('User ID not found. Please log out and log in again.');
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      setUploadError('Please select a valid image file (JPEG, PNG, or GIF)');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setUploadError('Image size must be less than 5MB');
+      return;
+    }
+
+    console.log('Starting image upload...');
+    setIsUploadingImage(true);
+    setUploadError('');
+    setUploadSuccess(false);
+
+    try {
+      console.log('Calling uploadProfileImage with memberId:', userMemberId);
+      const result = await uploadProfileImage(userMemberId, file);
+      console.log('Upload result:', result);
+
+      // Update user context with new avatar URL
+      if (result.imageUrl) {
+        console.log('✅ Updating user avatar with URL:', result.imageUrl);
+        await updateUser({
+          ...user,
+          avatarUrl: result.imageUrl
+        });
+
+        // Force a re-render to immediately show the new image
+        setUploadError(''); // Clear any previous errors
+        setUploadSuccess(true);
+
+        // Clear success message after 3 seconds
+        setTimeout(() => setUploadSuccess(false), 3000);
+
+        console.log('✅ Profile image uploaded and updated successfully!');
+      } else {
+        console.error('❌ No image URL returned from upload');
+        setUploadError('Image uploaded but URL not available');
+      }
+
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      setUploadError('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   return (
     <div className={styles.pageWrapper}>
       <div className={styles.container}>
@@ -604,7 +696,6 @@ export default function FeedPage() {
           <div className={styles.mainHeader}>
             <h2>{menuTitles[activeMenu as keyof typeof menuTitles]}</h2>
           </div>
-
         </div>
 
         {/* 포스트 작성 영역 - Profile 메뉴에서는 숨김 */}
@@ -676,7 +767,7 @@ export default function FeedPage() {
               </div>
             </div>
           </div>
-        </div>
+          </div>
         )}
 
         {/* Feed Content based on active menu */}
@@ -1150,9 +1241,11 @@ export default function FeedPage() {
                       width: '100px',
                       height: '100px',
                       borderRadius: '50%',
-                      background: user?.avatarUrl ? `url(${user.avatarUrl})` : '#1d9bf0',
+                      backgroundImage: user?.avatarUrl ? `url(${user.avatarUrl})` : undefined,
+                      backgroundColor: user?.avatarUrl ? 'transparent' : '#1d9bf0',
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1167,19 +1260,46 @@ export default function FeedPage() {
                       style={{
                         marginTop: '1rem',
                         padding: '0.5rem 1rem',
-                        background: '#f0f0f0',
+                        background: isUploadingImage ? '#e0e0e0' : '#f0f0f0',
                         border: 'none',
                         borderRadius: '20px',
-                        cursor: 'not-allowed',
+                        cursor: isUploadingImage ? 'not-allowed' : 'pointer',
                         fontSize: '0.875rem',
-                        color: '#666',
-                        opacity: 0.7
+                        color: '#333',
+                        transition: 'background 0.2s'
                       }}
-                      disabled
-                      title="이미지 업로드 기능은 곧 추가될 예정입니다"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
                     >
-                      📷 Change Photo
+                      {isUploadingImage ? '⏳ Uploading...' : '📷 Change Photo'}
                     </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                    {uploadError && (
+                      <div style={{
+                        marginTop: '0.5rem',
+                        color: '#e74c3c',
+                        fontSize: '0.75rem',
+                        textAlign: 'center'
+                      }}>
+                        {uploadError}
+                      </div>
+                    )}
+                    {uploadSuccess && (
+                      <div style={{
+                        marginTop: '0.5rem',
+                        color: '#27ae60',
+                        fontSize: '0.75rem',
+                        textAlign: 'center'
+                      }}>
+                        ✅ Image uploaded successfully!
+                      </div>
+                    )}
                   </div>
 
                   {/* Profile Info Section */}

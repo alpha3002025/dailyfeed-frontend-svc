@@ -252,15 +252,43 @@ class AuthService {
       this.setToken(token);
       console.log('🔍 Token after storage:', this.getToken() ? 'Token stored successfully' : 'Token storage failed');
 
-      // Create user object from credentials for now
-      // In a real application, the server should return user details
+      // Create user object from response data
+      // Extract user details from the login response
+      // Check multiple possible field names for memberId
+      const extractedMemberId = responseData.memberId ||
+                               responseData.member_id ||
+                               responseData.id ||
+                               responseData.userId ||
+                               responseData.user_id ||
+                               responseData.content?.memberId ||
+                               responseData.content?.id ||
+                               responseData.data?.memberId ||
+                               responseData.data?.id;
+
+      console.log('🔍 Searching for memberId in response:', {
+        'responseData.memberId': responseData.memberId,
+        'responseData.member_id': responseData.member_id,
+        'responseData.id': responseData.id,
+        'responseData.userId': responseData.userId,
+        'responseData.content?.memberId': responseData.content?.memberId,
+        'responseData.data?.memberId': responseData.data?.memberId,
+        'extracted': extractedMemberId
+      });
+
       const userData: AuthUser = {
-        id: 'temp-id',
-        email: credentials.email,
-        memberName: credentials.email.split('@')[0],
-        handle: credentials.email.split('@')[0],
-        displayName: credentials.email.split('@')[0],
+        id: extractedMemberId?.toString() || 'temp-id',
+        email: responseData.email || responseData.content?.email || credentials.email,
+        memberName: responseData.memberName || responseData.content?.memberName || responseData.name || credentials.email.split('@')[0],
+        handle: responseData.handle || responseData.content?.handle || responseData.memberHandle || credentials.email.split('@')[0],
+        displayName: responseData.displayName || responseData.content?.displayName || responseData.memberName || responseData.name || credentials.email.split('@')[0],
+        memberId: extractedMemberId ? (typeof extractedMemberId === 'number' ? extractedMemberId : parseInt(extractedMemberId)) : undefined,
+        avatarUrl: responseData.avatarUrl || responseData.content?.avatarUrl || responseData.profileImageUrl,
+        followersCount: responseData.followersCount || responseData.content?.followersCount,
+        followingCount: responseData.followingCount || responseData.content?.followingCount,
       };
+
+      console.log('📤 Extracted user data:', userData);
+      console.log('📤 MemberId specifically:', userData.memberId);
 
       return {
         user: userData,
@@ -886,6 +914,104 @@ class AuthService {
     }
   }
 
+  // Upload profile image
+  async uploadProfileImage(memberId: number, file: File): Promise<{ imageId: string; imageUrl?: string; thumbnailUrl?: string }> {
+    try {
+      const formData = new FormData();
+      // Server expects 'image' as the field name, not 'file'
+      formData.append('image', file);
+
+      console.log('📤 Uploading profile image...');
+      console.log('📤 File details:', { name: file.name, size: file.size, type: file.type });
+      console.log('📤 Token present:', !!this.token);
+
+      const response = await fetch(`http://localhost:8085/api/images/upload/profile`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          // Note: Don't set Content-Type for multipart/form-data, let the browser set it with boundary
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to upload profile image:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to upload image: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Profile image uploaded successfully:', result);
+
+      // Extract viewId from the response
+      // The response format is: {"status":200,"result":"SUCCESS","data":"uuid-string"}
+      // where data is the viewId directly
+      const viewId = typeof result.data === 'string' ? result.data : (result.data?.viewId || result.viewId);
+
+      if (!viewId) {
+        console.error('❌ No viewId in response:', result);
+        throw new Error('Upload succeeded but no viewId returned');
+      }
+
+      console.log('📌 Extracted viewId:', viewId);
+
+      // Construct the image URL using viewId
+      const imageUrl = `http://localhost:8085/api/images/view/${viewId}`;
+      const thumbnailUrl = `http://localhost:8085/api/images/view/${viewId}?thumbnail=true`;
+
+      console.log('📸 Image URLs:', { imageUrl, thumbnailUrl });
+
+      // Return the viewId and constructed URLs
+      return {
+        imageId: viewId,
+        imageUrl: imageUrl,
+        thumbnailUrl: thumbnailUrl
+      };
+    } catch (error) {
+      console.error('❌ Error uploading profile image:', error);
+      throw error;
+    }
+  }
+
+  // Get image URL
+  getImageUrl(imageId: string, thumbnail: boolean = false): string {
+    const baseUrl = `http://localhost:8085/api/images/view/${imageId}`;
+    return thumbnail ? `${baseUrl}?thumbnail=true` : baseUrl;
+  }
+
+  // Get image with authorization header
+  async getImage(imageId: string, thumbnail: boolean = false): Promise<string> {
+    try {
+      const url = this.getImageUrl(imageId, thumbnail);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+        }
+      });
+
+      if (!response.ok) {
+        console.error('❌ Failed to fetch image:', {
+          status: response.status,
+          statusText: response.statusText
+        });
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+
+      // Convert response to blob and create object URL
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      return imageUrl;
+    } catch (error) {
+      console.error('❌ Error fetching image:', error);
+      throw error;
+    }
+  }
+
   // Get following members' timeline posts
   async getFollowingTimelinePosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
@@ -998,3 +1124,13 @@ export const getMostPopularPosts = (page?: number, size?: number) =>
 // Get most commented posts
 export const getMostCommentedPosts = (page?: number, size?: number) =>
   authService.getMostCommentedPosts(page, size);
+
+// Image upload and retrieval
+export const uploadProfileImage = (memberId: number, file: File) =>
+  authService.uploadProfileImage(memberId, file);
+
+export const getImageUrl = (imageId: string, thumbnail?: boolean) =>
+  authService.getImageUrl(imageId, thumbnail);
+
+export const getImage = (imageId: string, thumbnail?: boolean) =>
+  authService.getImage(imageId, thumbnail);

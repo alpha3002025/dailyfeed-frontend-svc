@@ -557,21 +557,61 @@ class AuthService {
   }
 
   // Get followers and following lists
-  async getFollowersFollowings(): Promise<FollowingMember[]> {
+  async getFollowersFollowings(page: number = 0, size: number = 10): Promise<{ followers: FollowingMember[], followings: FollowingMember[], followersTotal?: number, followingsTotal?: number }> {
     console.log('🔄 Fetching followers-followings...');
-    const apiResponse = await this.apiCall<FollowersFollowingsResponse>('/api/members/followers-followings');
+    const apiResponse = await this.apiCall<FollowersFollowingsResponse>(`/api/members/followers-followings?page=${page}&size=${size}`);
     console.log('📦 Full API response:', apiResponse);
-    console.log('📦 Data structure:', apiResponse.data);
-    console.log('📦 Followings data:', apiResponse.data.followings);
 
-    const followingContent = apiResponse.data.followings.content;
-
-    const mappedContent = followingContent.map(member => ({
+    const followersContent = apiResponse.data.followers.content.map(member => ({
       ...member,
       handle: member.handle || (member as any).memberHandle || member.memberName
     }));
 
-    return mappedContent;
+    const followingsContent = apiResponse.data.followings.content.map(member => ({
+      ...member,
+      handle: member.handle || (member as any).memberHandle || member.memberName
+    }));
+
+    return {
+      followers: followersContent,
+      followings: followingsContent,
+      followersTotal: apiResponse.data.followers.totalElements,
+      followingsTotal: apiResponse.data.followings.totalElements
+    };
+  }
+
+  // Get more followers
+  async getMoreFollowers(page: number = 0, size: number = 10): Promise<{ followers: FollowingMember[], total?: number }> {
+    console.log('🔄 Fetching more followers...');
+    const apiResponse = await this.apiCall<any>(`/api/members/followers/more?page=${page}&size=${size}`);
+    console.log('📦 More followers response:', apiResponse);
+
+    const followersContent = (apiResponse.data?.content || apiResponse.content || []).map((member: any) => ({
+      ...member,
+      handle: member.handle || member.memberHandle || member.memberName
+    }));
+
+    return {
+      followers: followersContent,
+      total: apiResponse.data?.totalElements || apiResponse.totalElements
+    };
+  }
+
+  // Get more followings
+  async getMoreFollowings(page: number = 0, size: number = 10): Promise<{ followings: FollowingMember[], total?: number }> {
+    console.log('🔄 Fetching more followings...');
+    const apiResponse = await this.apiCall<any>(`/api/members/followings/more?page=${page}&size=${size}`);
+    console.log('📦 More followings response:', apiResponse);
+
+    const followingsContent = (apiResponse.data?.content || apiResponse.content || []).map((member: any) => ({
+      ...member,
+      handle: member.handle || member.memberHandle || member.memberName
+    }));
+
+    return {
+      followings: followingsContent,
+      total: apiResponse.data?.totalElements || apiResponse.totalElements
+    };
   }
 
   // Create a new post
@@ -1283,8 +1323,12 @@ export const followMember = (memberIdToFollow: number) =>
   authService.followMember(memberIdToFollow);
 export const unfollowMember = (memberIdToUnfollow: number) =>
   authService.unfollowMember(memberIdToUnfollow);
-export const getFollowersFollowings = () =>
-  authService.getFollowersFollowings();
+export const getFollowersFollowings = (page?: number, size?: number) =>
+  authService.getFollowersFollowings(page, size);
+export const getMoreFollowers = (page?: number, size?: number) =>
+  authService.getMoreFollowers(page, size);
+export const getMoreFollowings = (page?: number, size?: number) =>
+  authService.getMoreFollowings(page, size);
 export const createPost = (content: string) =>
   authService.createPost(content);
 export const getUserPosts = (page?: number, size?: number) =>

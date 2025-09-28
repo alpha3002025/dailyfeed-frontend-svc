@@ -46,10 +46,10 @@ export default function Following({ className }: FollowingProps) {
         setLoading(true);
         setError(null);
         console.log('🔄 Fetching following members...');
-        const followingList = await getFollowersFollowings();
-        console.log('✅ Following members response:', followingList);
-        setFollowingMembers(followingList);
-        console.log('👥 Set following members count:', followingList.length);
+        const { followings } = await getFollowersFollowings();
+        console.log('✅ Following members response:', followings);
+        setFollowingMembers(followings);
+        console.log('👥 Set following members count:', followings.length);
       } catch (err) {
         console.error('❌ Failed to fetch following members:', err);
         setError('팔로잉 목록을 불러올 수 없습니다.');

@@ -4,6 +4,7 @@ import style from "./layout.module.css";
 import { BookData } from "@/types";
 import Image from "next/image";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { FollowingProvider } from "@/contexts/FollowingContext";
 
 async function Footer(){
   const response = await fetch(
@@ -32,7 +33,9 @@ export default function RootLayout({
     <html lang="ko">
       <body>
         <AuthProvider>
-          {children}
+          <FollowingProvider>
+            {children}
+          </FollowingProvider>
         </AuthProvider>
       </body>
     </html>

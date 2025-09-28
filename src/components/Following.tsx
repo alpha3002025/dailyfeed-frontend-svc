@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getFollowersFollowings, unfollowMember, FollowingMember } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFollowing } from '@/contexts/FollowingContext';
 import styles from './Following.module.css';
 
 interface FollowingProps {
@@ -12,6 +13,7 @@ interface FollowingProps {
 
 export default function Following({ className }: FollowingProps) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { followingRefreshKey } = useFollowing();
   const router = useRouter();
   const [followingMembers, setFollowingMembers] = useState<FollowingMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,7 +62,7 @@ export default function Following({ className }: FollowingProps) {
     };
 
     fetchFollowingMembers();
-  }, [isAuthenticated, authLoading]);
+  }, [isAuthenticated, authLoading, followingRefreshKey]);
 
   const handleMemberClick = (handle: string) => {
     router.push(`/${handle}`);

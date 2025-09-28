@@ -496,15 +496,16 @@ class AuthService {
   }
 
   // Fetch recommended members for "Who to follow" section
-  async getRecommendedMembers(size: number = 5): Promise<RecommendedMembersResponse> {
+  async getRecommendedMembers(page: number = 0, size: number = 5): Promise<RecommendedMembersResponse> {
     const apiResponse = await this.apiCall<RecommendedMembersApiResponse>(
-      `/api/members/follow/recommend/newbie?size=${size}`
+      `/api/members/follow/recommend/newbie?page=${page}&size=${size}`
     );
 
     const responseData = apiResponse.data;
 
     const mappedContent = responseData.content.map(member => ({
       ...member,
+      id: (member as any).memberId?.toString() || member.id,
       handle: member.handle || (member as any).memberHandle || member.memberName
     }));
 
@@ -564,11 +565,13 @@ class AuthService {
 
     const followersContent = apiResponse.data.followers.content.map(member => ({
       ...member,
+      id: (member as any).memberId?.toString() || member.id,
       handle: member.handle || (member as any).memberHandle || member.memberName
     }));
 
     const followingsContent = apiResponse.data.followings.content.map(member => ({
       ...member,
+      id: (member as any).memberId?.toString() || member.id,
       handle: member.handle || (member as any).memberHandle || member.memberName
     }));
 
@@ -588,6 +591,7 @@ class AuthService {
 
     const followersContent = (apiResponse.data?.content || apiResponse.content || []).map((member: any) => ({
       ...member,
+      id: member.memberId?.toString() || member.id,
       handle: member.handle || member.memberHandle || member.memberName
     }));
 
@@ -605,6 +609,7 @@ class AuthService {
 
     const followingsContent = (apiResponse.data?.content || apiResponse.content || []).map((member: any) => ({
       ...member,
+      id: member.memberId?.toString() || member.id,
       handle: member.handle || member.memberHandle || member.memberName
     }));
 
@@ -1317,8 +1322,8 @@ export const authenticatedFetch = (url: string, options?: RequestInit) =>
   authService.authenticatedFetch(url, options);
 export const apiCall = <T>(endpoint: string, options?: RequestInit) =>
   authService.apiCall<T>(endpoint, options);
-export const getRecommendedMembers = (size?: number) =>
-  authService.getRecommendedMembers(size);
+export const getRecommendedMembers = (page?: number, size?: number) =>
+  authService.getRecommendedMembers(page, size);
 export const followMember = (memberIdToFollow: number) =>
   authService.followMember(memberIdToFollow);
 export const unfollowMember = (memberIdToUnfollow: number) =>

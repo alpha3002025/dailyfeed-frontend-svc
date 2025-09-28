@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getRecommendedMembers, followMember, unfollowMember, RecommendedMember } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFollowing } from '@/contexts/FollowingContext';
 import styles from './WhoToFollow.module.css';
 
 interface WhoToFollowProps {
@@ -12,6 +13,7 @@ interface WhoToFollowProps {
 
 export default function WhoToFollow({ className }: WhoToFollowProps) {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const { refreshFollowing } = useFollowing();
   const router = useRouter();
   const [members, setMembers] = useState<RecommendedMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,7 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
         setLoading(true);
         setError(null);
         console.log('🔄 Fetching recommended members...');
-        const response = await getRecommendedMembers(5);
+        const response = await getRecommendedMembers(0, 10);
         console.log('✅ Recommended members response:', response);
         setMembers(response.content || []);
         console.log('👥 Set members count:', response.content?.length || 0);
@@ -123,10 +125,12 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
         console.log('🔄 Unfollowing member:', memberIdNumber);
         await unfollowMember(memberIdNumber);
         console.log('✅ Successfully unfollowed member:', memberIdNumber);
+        refreshFollowing();
       } else {
         console.log('🔄 Following member:', memberIdNumber);
         await followMember(memberIdNumber);
         console.log('✅ Successfully followed member:', memberIdNumber);
+        refreshFollowing();
       }
     } catch (error) {
       console.error('❌ Follow/unfollow failed:', error);
@@ -228,7 +232,10 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
         </div>
       ))}
       <div className={styles.showMoreContainer}>
-        <button className={styles.showMoreButton}>
+        <button
+          className={styles.showMoreButton}
+          onClick={() => router.push('/discover')}
+        >
           Show more
         </button>
       </div>

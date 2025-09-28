@@ -40,9 +40,7 @@ export default function Page() {
         languageCode: 'ko',
         countryCode: 'KR',
         privacyLevel: 'PUBLIC',
-        isActive: true,
-        avatarUrl: '',
-        coverUrl: ''
+        isActive: true
     });
 
     const handleLogin = async (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>) => {
@@ -112,8 +110,8 @@ export default function Page() {
                     countryCode: signupData.countryCode,
                     privacyLevel: signupData.privacyLevel,
                     isActive: signupData.isActive,
-                    avatarUrl: signupData.avatarUrl,
-                    coverUrl: signupData.coverUrl
+                    avatarUrl: null,
+                    coverUrl: null
                 })
             });
 
@@ -137,9 +135,7 @@ export default function Page() {
                     languageCode: 'ko',
                     countryCode: 'KR',
                     privacyLevel: 'PUBLIC',
-                    isActive: true,
-                    avatarUrl: '',
-                    coverUrl: ''
+                    isActive: true
                 });
             } else {
                 const errorData = await response.json();
@@ -431,17 +427,6 @@ export default function Page() {
                                         <option value="FEMALE">여성</option>
                                         <option value="OTHER">기타</option>
                                     </select>
-                                </div>
-
-                                <div className={style.form_group}>
-                                    <label>프로필 이미지 URL</label>
-                                    <input
-                                        type="url"
-                                        name="avatarUrl"
-                                        value={signupData.avatarUrl}
-                                        onChange={handleSignupInputChange}
-                                        placeholder="https://example.com/avatar.jpg"
-                                    />
                                 </div>
                             </div>
 

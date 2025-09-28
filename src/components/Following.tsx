@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getFollowersFollowings, unfollowMember, FollowingMember } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFollowing } from '@/contexts/FollowingContext';
+import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
 import styles from './Following.module.css';
 
 interface FollowingProps {
@@ -147,10 +148,10 @@ export default function Following({ className }: FollowingProps) {
             onClick={() => handleMemberClick(member.handle)}
             style={{ cursor: 'pointer' }}
           >
-            {member.avatarUrl ? (
+            {hasValidAvatar(member.avatarUrl) ? (
               <img src={member.avatarUrl} alt={member.displayName} />
             ) : (
-              <span>{member.displayName?.charAt(0) || member.memberName?.charAt(0) || 'U'}</span>
+              <span>{getAvatarInitial(member.displayName, member.memberName, member.handle)}</span>
             )}
           </div>
           <div

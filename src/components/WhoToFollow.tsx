@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getRecommendedMembers, followMember, unfollowMember, RecommendedMember } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFollowing } from '@/contexts/FollowingContext';
+import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
 import styles from './WhoToFollow.module.css';
 
 interface WhoToFollowProps {
@@ -193,10 +194,10 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
             onClick={() => handleMemberClick(member.handle)}
             style={{ cursor: 'pointer' }}
           >
-            {member.avatarUrl ? (
+            {hasValidAvatar(member.avatarUrl) ? (
               <img src={member.avatarUrl} alt={member.displayName} />
             ) : (
-              <span>{member.displayName?.charAt(0) || member.memberName?.charAt(0) || 'U'}</span>
+              <span>{getAvatarInitial(member.displayName, member.memberName, member.handle)}</span>
             )}
           </div>
           <div

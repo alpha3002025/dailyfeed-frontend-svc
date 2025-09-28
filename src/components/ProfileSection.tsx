@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import type { AuthUser, ProfileData, HandleUpdateData } from '@/lib/auth';
+import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
 
 interface ProfileSectionProps {
   profile: AuthUser | null;
@@ -126,8 +127,8 @@ export default function ProfileSection({
               width: '100px',
               height: '100px',
               borderRadius: '50%',
-              backgroundImage: profileFormData.avatarUrl ? `url(${profileFormData.avatarUrl})` : undefined,
-              backgroundColor: profileFormData.avatarUrl ? 'transparent' : '#1d9bf0',
+              backgroundImage: hasValidAvatar(profileFormData.avatarUrl) ? `url(${profileFormData.avatarUrl})` : undefined,
+              backgroundColor: hasValidAvatar(profileFormData.avatarUrl) ? 'transparent' : '#1d9bf0',
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
@@ -139,7 +140,7 @@ export default function ProfileSection({
               fontWeight: 'bold',
               border: '3px solid #f0f0f0'
             }}>
-              {!profileFormData.avatarUrl && (profile.displayName?.charAt(0) || 'U')}
+              {!hasValidAvatar(profileFormData.avatarUrl) && getAvatarInitial(profile?.displayName, profile?.memberName, profile?.handle)}
             </div>
             {isEditingProfile && (
               <button

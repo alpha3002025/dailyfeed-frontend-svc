@@ -8,6 +8,7 @@ import Following from '@/components/Following';
 import ProfileSection from '@/components/ProfileSection';
 import PostCard from '@/components/PostCard';
 import PostEditModal from '@/components/PostEditModal';
+import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
 import {
   createPost,
   updatePost,
@@ -788,10 +789,10 @@ export default function FeedPage() {
           <div className={styles.userSection}>
             <div className={styles.userInfo}>
               <div className={styles.userAvatar}>
-                {user?.avatarUrl ? (
-                  <img src={user.avatarUrl} alt="Profile" />
+                {hasValidAvatar(user?.avatarUrl) ? (
+                  <img src={user.avatarUrl!} alt="Profile" />
                 ) : (
-                  <span>{user?.displayName?.charAt(0) || 'U'}</span>
+                  <span>{getAvatarInitial(user?.displayName, user?.memberName, user?.handle)}</span>
                 )}
               </div>
               <div className={styles.userDetails}>
@@ -823,10 +824,10 @@ export default function FeedPage() {
           <div className={styles.composeCard}>
           <div className={styles.composeContent}>
             <div className={styles.avatar}>
-              {user?.avatarUrl ? (
-                <img src={user.avatarUrl} alt="Profile" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
+              {hasValidAvatar(user?.avatarUrl) ? (
+                <img src={user.avatarUrl!} alt="Profile" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
               ) : (
-                <span>{user?.displayName?.charAt(0) || user?.memberName?.charAt(0) || 'U'}</span>
+                <span>{getAvatarInitial(user?.displayName, user?.memberName, user?.handle)}</span>
               )}
             </div>
             <div className={styles.composeForm}>

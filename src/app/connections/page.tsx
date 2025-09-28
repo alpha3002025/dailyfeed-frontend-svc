@@ -11,6 +11,7 @@ import {
   followMember,
   type FollowingMember
 } from '@/lib/auth';
+import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
 import styles from './connections.module.css';
 
 type TabType = 'followers' | 'followings';
@@ -235,10 +236,10 @@ export default function ConnectionsPage() {
                         className={styles.memberAvatar}
                         onClick={() => handleMemberClick(member.handle)}
                       >
-                        {member.avatarUrl ? (
+                        {hasValidAvatar(member.avatarUrl) ? (
                           <img src={member.avatarUrl} alt={member.displayName} />
                         ) : (
-                          <span>{member.displayName?.charAt(0) || member.memberName?.charAt(0) || 'U'}</span>
+                          <span>{getAvatarInitial(member.displayName, member.memberName, member.handle)}</span>
                         )}
                       </div>
                       <div

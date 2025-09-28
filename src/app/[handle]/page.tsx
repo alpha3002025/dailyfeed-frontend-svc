@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getMemberProfile, type AuthUser } from '@/lib/auth';
+import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
 import styles from './member-profile.module.css';
 
 export default function MemberProfilePage() {
@@ -109,7 +110,7 @@ export default function MemberProfilePage() {
           <div className={styles.profileCard}>
             <div className={styles.profileHeader}>
               <div className={styles.avatarContainer}>
-                {profile.avatarUrl ? (
+                {hasValidAvatar(profile.avatarUrl) ? (
                   <img
                     src={profile.avatarUrl}
                     alt="Profile"
@@ -118,7 +119,7 @@ export default function MemberProfilePage() {
                 ) : (
                   <div className={styles.avatarPlaceholder}>
                     <span className={styles.avatarInitial}>
-                      {profile.displayName?.charAt(0) || '?'}
+                      {getAvatarInitial(profile.displayName, profile.memberName, profile.handle)}
                     </span>
                   </div>
                 )}

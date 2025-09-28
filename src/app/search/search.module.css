@@ -1,0 +1,145 @@
+.pageWrapper {
+    min-height: 100vh;
+    background: #f7f9fa;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    gap: 24px;
+    padding: 20px;
+}
+
+.leftSidebar {
+    position: sticky;
+    top: 20px;
+    height: fit-content;
+}
+
+.logo {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1d9bf0;
+    margin-bottom: 24px;
+    padding: 16px;
+}
+
+.backButton {
+    width: 100%;
+    padding: 12px 16px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1d9bf0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.backButton:hover {
+    background: #f7fafc;
+}
+
+.mainContent {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    min-height: 500px;
+}
+
+.searchHeader {
+    padding: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.searchTitle {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a202c;
+    margin: 0;
+}
+
+.loadingContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-size: 18px;
+    color: #718096;
+}
+
+.loadingMessage {
+    padding: 48px;
+    text-align: center;
+    color: #718096;
+    font-size: 16px;
+}
+
+.errorMessage {
+    padding: 48px;
+    text-align: center;
+    color: #e53e3e;
+    font-size: 16px;
+    background: #fff5f5;
+    margin: 24px;
+    border-radius: 12px;
+    border: 1px solid #fc8181;
+}
+
+.emptyMessage {
+    padding: 64px 24px;
+    text-align: center;
+}
+
+.emptyIcon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.emptyTitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 8px;
+}
+
+.emptySubtitle {
+    font-size: 15px;
+    color: #718096;
+}
+
+.resultsContainer {
+    padding: 24px;
+}
+
+.resultsCount {
+    font-size: 14px;
+    color: #718096;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.rightSidebar {
+    position: sticky;
+    top: 20px;
+    height: fit-content;
+}
+
+.sidebarSection {
+    margin-bottom: 16px;
+}
+
+@media (max-width: 1200px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+
+    .leftSidebar,
+    .rightSidebar {
+        display: none;
+    }
+}

@@ -1286,6 +1286,62 @@ class AuthService {
     }
   }
 
+  // Search posts by keyword
+  async searchPosts(keyword: string, page: number = 0, size: number = 20): Promise<Post[]> {
+    console.log('🔍 Searching posts with keyword:', keyword);
+    try {
+      const response = await fetch(`http://localhost:8083/api/search/posts/?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.error('❌ Search failed:', response.status);
+        throw new Error(`Failed to search posts: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Search response:', result);
+
+      let posts = [];
+      if (result.data && result.data.content) {
+        posts = result.data.content;
+      } else if (result.content) {
+        posts = result.content;
+      } else if (Array.isArray(result)) {
+        posts = result;
+      } else {
+        console.warn('Unexpected response structure:', result);
+        return [];
+      }
+
+      return posts.map(post => {
+        const mappedPost = {
+          id: post.id || post._id,
+          content: post.content,
+          memberName: post.authorName || post.writerName || post.userName || post.memberName || post.author?.name || post.writer?.name || post.user?.name || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          memberHandle: post.memberHandle || post.authorHandle || post.writerHandle || post.userHandle || post.author?.handle || post.writer?.handle || post.user?.handle || post.handle || (post.authorId ? `user${post.authorId}` : 'unknown'),
+          memberDisplayName: post.authorName || post.writerName || post.userName || post.displayName || post.memberDisplayName || post.author?.displayName || post.writer?.displayName || post.user?.displayName || post.memberName || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          memberAvatarUrl: post.avatarUrl || post.memberAvatarUrl || post.authorAvatarUrl,
+          createdAt: post.createdAt || post.createdDate || post.timestamp,
+          updatedAt: post.updatedAt || post.updatedDate,
+          authorId: post.authorId,
+          likesCount: post.likeCount ?? post.likesCount ?? 0,
+          commentsCount: post.commentCount ?? post.commentsCount ?? 0,
+          sharesCount: post.shareCount ?? post.sharesCount ?? 0,
+          isLiked: post.isLiked ?? false
+        };
+        return mappedPost;
+      });
+    } catch (error) {
+      console.error('❌ Error searching posts:', error);
+      throw error;
+    }
+  }
+
   // Get following members' timeline posts
   async getFollowingTimelinePosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
@@ -1405,6 +1461,10 @@ export const getMostPopularPosts = (page?: number, size?: number) =>
 // Get most commented posts
 export const getMostCommentedPosts = (page?: number, size?: number) =>
   authService.getMostCommentedPosts(page, size);
+
+// Search posts
+export const searchPosts = (keyword: string, page?: number, size?: number) =>
+  authService.searchPosts(keyword, page, size);
 
 // Image upload and retrieval
 export const uploadProfileImage = (memberId: number, file: File) =>

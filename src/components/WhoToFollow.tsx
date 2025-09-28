@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { getRecommendedMembers, followMember, unfollowMember, RecommendedMember } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './WhoToFollow.module.css';
@@ -11,6 +12,7 @@ interface WhoToFollowProps {
 
 export default function WhoToFollow({ className }: WhoToFollowProps) {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const router = useRouter();
   const [members, setMembers] = useState<RecommendedMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,10 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
 
     fetchRecommendedMembers();
   }, [isAuthenticated, authLoading]);
+
+  const handleMemberClick = (handle: string) => {
+    router.push(`/${handle}`);
+  };
 
   const handleFollowToggle = async (member: RecommendedMember) => {
     console.log('🎯 Follow toggle clicked for member:', member);
@@ -178,14 +184,22 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
       <div className={styles.sectionHeader}>👥 Who to follow</div>
       {members.map((member) => (
         <div key={member.id} className={styles.memberItem}>
-          <div className={styles.memberAvatar}>
+          <div
+            className={styles.memberAvatar}
+            onClick={() => handleMemberClick(member.handle)}
+            style={{ cursor: 'pointer' }}
+          >
             {member.avatarUrl ? (
               <img src={member.avatarUrl} alt={member.displayName} />
             ) : (
               <span>{member.displayName?.charAt(0) || member.memberName?.charAt(0) || 'U'}</span>
             )}
           </div>
-          <div className={styles.memberInfo}>
+          <div
+            className={styles.memberInfo}
+            onClick={() => handleMemberClick(member.handle)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className={styles.memberName}>
               {member.displayName || member.memberName}
             </div>

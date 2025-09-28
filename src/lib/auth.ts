@@ -1078,7 +1078,7 @@ class AuthService {
         id: profileData.memberId?.toString() || profileData.id,
         email: profileData.email,
         memberName: profileData.memberName,
-        handle: profileData.handle,
+        handle: profileData.handle || profileData.memberHandle,
         displayName: profileData.displayName,
         bio: profileData.bio,
         avatarUrl: profileData.avatarUrl,
@@ -1095,6 +1095,44 @@ class AuthService {
       };
     } catch (error) {
       console.error('❌ Error fetching profile:', error);
+      throw error;
+    }
+  }
+
+  async getMemberProfile(handle: string): Promise<AuthUser> {
+    console.log('👤 Fetching member profile by handle:', handle);
+    try {
+      const response = await this.authenticatedFetch(`http://localhost:8084/api/members/profile/@${handle}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch member profile: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Member profile fetched:', result);
+
+      const profileData = result.data || result;
+      return {
+        id: profileData.memberId?.toString() || profileData.id,
+        email: profileData.email,
+        memberName: profileData.memberName,
+        handle: profileData.handle || profileData.memberHandle,
+        displayName: profileData.displayName,
+        bio: profileData.bio,
+        avatarUrl: profileData.avatarUrl,
+        memberId: profileData.memberId,
+        location: profileData.location,
+        websiteUrl: profileData.websiteUrl,
+        birthDate: profileData.birthDate,
+        gender: profileData.gender,
+        languageCode: profileData.languageCode,
+        countryCode: profileData.countryCode,
+        privacyLevel: profileData.privacyLevel,
+        followersCount: profileData.followersCount,
+        followingCount: profileData.followingCount,
+      };
+    } catch (error) {
+      console.error('❌ Error fetching member profile:', error);
       throw error;
     }
   }
@@ -1284,6 +1322,9 @@ export const getImage = (imageId: string, thumbnail?: boolean) =>
 
 export const getMyProfile = () =>
   authService.getMyProfile();
+
+export const getMemberProfile = (handle: string) =>
+  authService.getMemberProfile(handle);
 
 export const updateProfile = (profileData: ProfileData) =>
   authService.updateProfile(profileData);

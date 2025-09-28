@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { getFollowersFollowings, unfollowMember, FollowingMember } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './Following.module.css';
@@ -11,6 +12,7 @@ interface FollowingProps {
 
 export default function Following({ className }: FollowingProps) {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [followingMembers, setFollowingMembers] = useState<FollowingMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +61,10 @@ export default function Following({ className }: FollowingProps) {
 
     fetchFollowingMembers();
   }, [isAuthenticated, authLoading]);
+
+  const handleMemberClick = (handle: string) => {
+    router.push(`/${handle}`);
+  };
 
   const handleUnfollow = async (member: FollowingMember) => {
     const memberId = member.id;
@@ -134,14 +140,22 @@ export default function Following({ className }: FollowingProps) {
       <div className={styles.sectionHeader}>👥 Following</div>
       {followingMembers.map((member) => (
         <div key={member.id} className={styles.followingItem}>
-          <div className={styles.memberAvatar}>
+          <div
+            className={styles.memberAvatar}
+            onClick={() => handleMemberClick(member.handle)}
+            style={{ cursor: 'pointer' }}
+          >
             {member.avatarUrl ? (
               <img src={member.avatarUrl} alt={member.displayName} />
             ) : (
               <span>{member.displayName?.charAt(0) || member.memberName?.charAt(0) || 'U'}</span>
             )}
           </div>
-          <div className={styles.memberInfo}>
+          <div
+            className={styles.memberInfo}
+            onClick={() => handleMemberClick(member.handle)}
+            style={{ cursor: 'pointer' }}
+          >
             <div className={styles.memberName}>
               {member.displayName || member.memberName}
             </div>

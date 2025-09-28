@@ -1,0 +1,322 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.pageWrapper {
+    min-height: 100vh;
+    background-color: #f8fafc;
+    color: #1a202c;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.container {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
+    gap: 32px;
+    padding: 32px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    background-color: #f8fafc;
+    color: #1a202c;
+}
+
+/* 왼쪽 사이드바 */
+.sidebar {
+    width: 280px;
+    position: fixed;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+}
+
+.sidebarCard {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.logo {
+    padding: 40px 32px;
+    background: #000000;
+    color: white;
+    text-align: center;
+    position: relative;
+}
+
+.logo::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+}
+
+.logo h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.sidebarContent {
+    padding: 24px;
+}
+
+.homeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 16px 20px;
+    background-color: #000000;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.homeButton:hover {
+    background-color: #1a1a1a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 메인 컨텐츠 */
+.mainContent {
+    margin-left: 312px;
+    width: calc(100% - 312px - 340px);
+    max-width: 680px;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* 오른쪽 사이드바 */
+.rightSidebar {
+    width: 308px;
+    position: fixed;
+    right: 32px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+}
+
+.sidebarSection {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.sectionHeader {
+    padding: 24px 32px;
+    background: #000000;
+    color: white;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.sectionContent {
+    padding: 24px 32px;
+}
+
+.sectionText {
+    color: #4a5568;
+    font-size: 14px;
+    margin: 0;
+}
+
+.loadingContainer,
+.errorContainer {
+    text-align: center;
+    padding: 48px 24px;
+}
+
+.loadingText {
+    font-size: 18px;
+    color: #4a5568;
+}
+
+.errorContainer {
+    background: white;
+    border-radius: 20px;
+    padding: 48px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.errorText {
+    color: #e53e3e;
+    font-size: 18px;
+    margin-bottom: 24px;
+}
+
+.backButton {
+    display: inline-flex;
+    align-items: center;
+    padding: 12px 24px;
+    margin-bottom: 24px;
+    background-color: #ffffff;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.backButton:hover {
+    background-color: #f7fafc;
+    border-color: #cbd5e0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.profileCard {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.profileHeader {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 48px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.avatarContainer {
+    flex-shrink: 0;
+}
+
+.avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #f7fafc;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.avatarPlaceholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 4px solid #f7fafc;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.avatarInitial {
+    color: white;
+    font-size: 48px;
+    font-weight: 700;
+}
+
+.profileInfo {
+    flex: 1;
+}
+
+.displayName {
+    font-size: 32px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #1a202c;
+}
+
+.handle {
+    font-size: 18px;
+    color: #718096;
+    margin: 0 0 16px 0;
+}
+
+.stats {
+    display: flex;
+    gap: 24px;
+}
+
+.stat {
+    font-size: 16px;
+    color: #4a5568;
+}
+
+.stat strong {
+    font-weight: 700;
+    color: #1a202c;
+}
+
+.profileDetails {
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.detailItem {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detailLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.detailValue {
+    font-size: 16px;
+    color: #1a202c;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.link {
+    font-size: 16px;
+    color: #3182ce;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.link:hover {
+    color: #2c5282;
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    .profileHeader {
+        flex-direction: column;
+        text-align: center;
+        padding: 32px 24px;
+    }
+
+    .profileDetails {
+        padding: 32px 24px;
+    }
+
+    .displayName {
+        font-size: 24px;
+    }
+
+    .stats {
+        justify-content: center;
+    }
+}

@@ -501,8 +501,17 @@ class AuthService {
       `/api/members/follow/recommend/newbie?size=${size}`
     );
 
-    // Extract data from the nested response structure
-    return apiResponse.data;
+    const responseData = apiResponse.data;
+
+    const mappedContent = responseData.content.map(member => ({
+      ...member,
+      handle: member.handle || (member as any).memberHandle || member.memberName
+    }));
+
+    return {
+      ...responseData,
+      content: mappedContent
+    };
   }
 
   // Follow a member
@@ -555,7 +564,14 @@ class AuthService {
     console.log('📦 Data structure:', apiResponse.data);
     console.log('📦 Followings data:', apiResponse.data.followings);
 
-    return apiResponse.data.followings.content;
+    const followingContent = apiResponse.data.followings.content;
+
+    const mappedContent = followingContent.map(member => ({
+      ...member,
+      handle: member.handle || (member as any).memberHandle || member.memberName
+    }));
+
+    return mappedContent;
   }
 
   // Create a new post

@@ -693,7 +693,7 @@ export default function FeedPage() {
       {/* 왼쪽 사이드바 */}
       <nav className={styles.sidebar}>
         <div className={styles.sidebarCard}>
-          <div className={styles.logo}>
+          <div className={styles.logo} onClick={() => router.push('/')} style={{ cursor: 'pointer' }}>
             <h1>Dailyfeed</h1>
           </div>
 

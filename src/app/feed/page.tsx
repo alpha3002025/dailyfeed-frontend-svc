@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import WhoToFollow from '@/components/WhoToFollow';
 import Following from '@/components/Following';
 import ProfileSection from '@/components/ProfileSection';
+import PostCard from '@/components/PostCard';
 import {
   createPost,
   getUserPosts,
@@ -438,90 +439,12 @@ export default function FeedPage() {
     }
 
     return posts.map((post) => (
-      <div
+      <PostCard
         key={post.id}
-        className={styles.feedItem}
-        style={{ cursor: 'pointer' }}
-      >
-        <div className={styles.feedContent}>
-          <div className={styles.avatar}>
-            {source === 'myPosts' && user?.avatarUrl ? (
-              <img
-                src={user.avatarUrl}
-                alt="Profile"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '50%',
-                  objectFit: 'cover'
-                }}
-              />
-            ) : (
-              <span>{post.memberDisplayName?.charAt(0) || post.memberName?.charAt(0) || 'U'}</span>
-            )}
-          </div>
-          <div className={styles.feedText}>
-            <div
-              className={styles.feedHeader}
-              onClick={() => router.push(`/post/${post.id}`)}
-            >
-              <span className={styles.username}>
-                {source === 'myPosts'
-                  ? (user?.displayName || user?.memberName || 'Unknown User')
-                  : (post.memberDisplayName || post.memberName || 'Unknown User')}
-              </span>
-              <span className={styles.handle}>
-                @{source === 'myPosts'
-                  ? (user?.handle || 'unknown')
-                  : (post.memberHandle || 'unknown')}
-              </span>
-              <span className={styles.timestamp}>• {formatDate(post.createdAt)}</span>
-            </div>
-            <div
-              className={styles.feedBody}
-              onClick={() => router.push(`/post/${post.id}`)}
-            >
-              {post.content.split('\n').map((line, index) => (
-                <span key={index}>
-                  {line}
-                  {index < post.content.split('\n').length - 1 && <br />}
-                </span>
-              ))}
-            </div>
-            <div className={styles.feedActions}>
-              <div className={styles.actionBtn}>
-                <svg viewBox="0 0 24 24"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"/></svg>
-                {post.commentsCount || 0}
-              </div>
-              <div className={styles.actionBtn}>
-                <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
-                {post.sharesCount || 0}
-              </div>
-              <div
-                className={styles.actionBtn}
-                onClick={(e) => handleLikeToggle(e, post, source)}
-                style={{
-                  cursor: 'pointer',
-                  opacity: likingPostIds.has(post.id) ? 0.5 : 1,
-                  color: post.isLiked ? '#e0245e' : 'inherit'
-                }}
-              >
-                <svg viewBox="0 0 24 24" fill={post.isLiked ? '#e0245e' : 'none'}>
-                  {post.isLiked ? (
-                    <path d="M20.884 13.19c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
-                  ) : (
-                    <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
-                  )}
-                </svg>
-                {post.likesCount || 0}
-              </div>
-              <div className={styles.actionBtn}>
-                <svg viewBox="0 0 24 24"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.29 3.3-1.42-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+        post={post}
+        onLike={(postId) => handleLikeToggle(null as any, post, source)}
+        isLiking={likingPostIds.has(post.id)}
+      />
     ));
   };
 
@@ -1290,107 +1213,14 @@ export default function FeedPage() {
                 </div>
               )}
 
-              {!isLoadingPosts && !postsError && myPosts.map((post) => {
-                const formatDate = (dateString: string) => {
-                  const date = new Date(dateString);
-                  const now = new Date();
-                  const diff = now.getTime() - date.getTime();
-                  const hours = Math.floor(diff / (1000 * 60 * 60));
-                  const days = Math.floor(hours / 24);
-
-                  if (hours < 1) {
-                    const minutes = Math.floor(diff / (1000 * 60));
-                    return minutes <= 1 ? '방금 전' : `${minutes}분 전`;
-                  } else if (hours < 24) {
-                    return `${hours}시간 전`;
-                  } else if (days < 7) {
-                    return `${days}일 전`;
-                  } else {
-                    return date.toLocaleDateString('ko-KR');
-                  }
-                };
-
-                return (
-                  <div
-                    key={post.id}
-                    className={styles.feedItem}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <div className={styles.feedContent}>
-                      <div className={styles.avatar}>
-                        {user?.avatarUrl ? (
-                          <img
-                            src={user.avatarUrl}
-                            alt="Profile"
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              borderRadius: '50%',
-                              objectFit: 'cover'
-                            }}
-                          />
-                        ) : (
-                          <span>{user?.displayName?.charAt(0) || user?.memberName?.charAt(0) || 'U'}</span>
-                        )}
-                      </div>
-                      <div className={styles.feedText}>
-                        <div
-                          className={styles.feedHeader}
-                          onClick={() => router.push(`/post/${post.id}`)}
-                        >
-                          <span className={styles.username}>
-                            {user?.displayName || user?.memberName || 'Unknown User'}
-                          </span>
-                          <span className={styles.handle}>@{user?.handle || 'unknown'}</span>
-                          <span className={styles.timestamp}>• {formatDate(post.createdAt)}</span>
-                        </div>
-                        <div
-                          className={styles.feedBody}
-                          onClick={() => router.push(`/post/${post.id}`)}
-                        >
-                          {post.content.split('\n').map((line, index) => (
-                            <span key={index}>
-                              {line}
-                              {index < post.content.split('\n').length - 1 && <br />}
-                            </span>
-                          ))}
-                        </div>
-                        <div className={styles.feedActions}>
-                          <div className={styles.actionBtn}>
-                            <svg viewBox="0 0 24 24"><path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"/></svg>
-                            {post.commentsCount || 0}
-                          </div>
-                          <div className={styles.actionBtn}>
-                            <svg viewBox="0 0 24 24"><path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.791-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.791 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46L18.5 16.45V8c0-1.1-.896-2-2-2z"/></svg>
-                            {post.sharesCount || 0}
-                          </div>
-                          <div
-                            className={styles.actionBtn}
-                            onClick={(e) => handleLikeToggle(e, post, 'myPosts')}
-                            style={{
-                              cursor: 'pointer',
-                              opacity: likingPostIds.has(post.id) ? 0.5 : 1,
-                              color: post.isLiked ? '#e0245e' : 'inherit'
-                            }}
-                          >
-                            <svg viewBox="0 0 24 24" fill={post.isLiked ? '#e0245e' : 'none'}>
-                              {post.isLiked ? (
-                                <path d="M20.884 13.19c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
-                              ) : (
-                                <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>
-                              )}
-                            </svg>
-                            {post.likesCount || 0}
-                          </div>
-                          <div className={styles.actionBtn}>
-                            <svg viewBox="0 0 24 24"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.29 3.3-1.42-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"/></svg>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {!isLoadingPosts && !postsError && myPosts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onLike={(postId) => handleLikeToggle(null as any, post, 'myPosts')}
+                  isLiking={likingPostIds.has(post.id)}
+                />
+              ))}
             </div>
           )}
 

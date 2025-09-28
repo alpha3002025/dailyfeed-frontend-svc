@@ -102,6 +102,13 @@ export interface Post {
   commentsCount?: number;
   sharesCount?: number;
   isLiked?: boolean;
+  linkPreview?: {
+    url: string;
+    title?: string;
+    description?: string;
+    image?: string;
+    siteName?: string;
+  };
   // Additional fields that may come from the API
   authorName?: string;
   authorHandle?: string;

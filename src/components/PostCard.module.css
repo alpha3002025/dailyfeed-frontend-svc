@@ -1,0 +1,91 @@
+.postCard {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+    padding: 24px;
+    margin-bottom: 16px;
+    transition: all 0.2s ease;
+}
+
+.postCard:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.postHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.authorInfo {
+    flex: 1;
+}
+
+.authorName {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a202c;
+    margin-bottom: 2px;
+}
+
+.authorHandle {
+    font-size: 14px;
+    color: #718096;
+}
+
+.postTime {
+    font-size: 13px;
+    color: #a0aec0;
+}
+
+.postContent {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #2d3748;
+    margin-bottom: 16px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.postActions {
+    display: flex;
+    gap: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.actionButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: #718096;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+.actionButton:hover {
+    background: #f7fafc;
+    color: #2d3748;
+}
+
+.actionButton.liked {
+    color: #e53e3e;
+}
+
+.actionButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.actionIcon {
+    width: 20px;
+    height: 20px;
+}

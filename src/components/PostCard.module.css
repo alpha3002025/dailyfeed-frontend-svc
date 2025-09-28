@@ -23,6 +23,12 @@
     flex: 1;
 }
 
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .authorName {
     font-size: 16px;
     font-weight: 700;
@@ -88,4 +94,26 @@
 .actionIcon {
     width: 20px;
     height: 20px;
+}
+
+.editButton {
+    background: none;
+    border: none;
+    color: #718096;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.editButton:hover {
+    background: #f7fafc;
+    color: #3182ce;
+}
+
+.editButton svg {
+    display: block;
 }

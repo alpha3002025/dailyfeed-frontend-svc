@@ -658,6 +658,38 @@ class AuthService {
     }
   }
 
+  // Update an existing post
+  async updatePost(postId: number, content: string): Promise<void> {
+    console.log('✏️ Updating post:', postId, content);
+    try {
+      const response = await fetch(`http://localhost:8081/api/posts/${postId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Post update failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to update post: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Post updated successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Post update error:', error);
+      throw error;
+    }
+  }
+
   // Get user's posts
   async getUserPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     console.log('📖 Fetching user posts...');
@@ -1343,6 +1375,8 @@ export const getMoreFollowings = (page?: number, size?: number) =>
   authService.getMoreFollowings(page, size);
 export const createPost = (content: string) =>
   authService.createPost(content);
+export const updatePost = (postId: number, content: string) =>
+  authService.updatePost(postId, content);
 export const getUserPosts = (page?: number, size?: number) =>
   authService.getUserPosts(page, size);
 export const getPostDetail = (postId: number) =>

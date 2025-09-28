@@ -9,11 +9,13 @@ interface PostCardProps {
   post: Post;
   onLike?: (postId: number) => void;
   onComment?: (postId: number) => void;
+  onEdit?: (postId: number) => void;
   isLiking?: boolean;
+  showEditButton?: boolean;
   className?: string;
 }
 
-export default function PostCard({ post, onLike, onComment, isLiking, className }: PostCardProps) {
+export default function PostCard({ post, onLike, onComment, onEdit, isLiking, showEditButton = false, className }: PostCardProps) {
   const urls = extractUrls(post.content);
   const firstUrl = urls.length > 0 ? urls[0] : null;
 
@@ -45,8 +47,21 @@ export default function PostCard({ post, onLike, onComment, isLiking, className 
             @{post.memberHandle || post.authorHandle || 'unknown'}
           </div>
         </div>
-        <div className={styles.postTime}>
-          {formatDate(post.createdAt)}
+        <div className={styles.headerRight}>
+          <div className={styles.postTime}>
+            {formatDate(post.createdAt)}
+          </div>
+          {showEditButton && onEdit && (
+            <button
+              className={styles.editButton}
+              onClick={() => onEdit(post.id)}
+              title="게시글 수정"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 

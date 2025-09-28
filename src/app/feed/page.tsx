@@ -7,8 +7,10 @@ import WhoToFollow from '@/components/WhoToFollow';
 import Following from '@/components/Following';
 import ProfileSection from '@/components/ProfileSection';
 import PostCard from '@/components/PostCard';
+import PostEditModal from '@/components/PostEditModal';
 import {
   createPost,
+  updatePost,
   getUserPosts,
   likePost,
   unlikePost,
@@ -74,6 +76,9 @@ export default function FeedPage() {
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [handleFormValue, setHandleFormValue] = useState('');
   const initialProfileRef = useRef<AuthUser | null>(null);
+
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Add ref to prevent duplicate fetches
   const fetchInProgress = useRef<{ [key: string]: boolean }>({});
@@ -303,6 +308,28 @@ export default function FeedPage() {
 
   const handleShareClick = () => {
     handlePostSubmit();
+  };
+
+  const handleEditPost = (postId: number) => {
+    const post = myPosts.find(p => p.id === postId);
+    if (post) {
+      setEditingPost(post);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveEdit = async (postId: number, content: string) => {
+    await updatePost(postId, content);
+    setMyPosts(posts =>
+      posts.map(p => p.id === postId ? { ...p, content } : p)
+    );
+    setIsEditModalOpen(false);
+    setEditingPost(null);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingPost(null);
   };
 
   const handleLikeToggle = async (e: React.MouseEvent, post: Post, source: 'myPosts' | 'followingPosts' | 'popularPosts' | 'commentedPosts' = 'myPosts') => {
@@ -1218,7 +1245,9 @@ export default function FeedPage() {
                   key={post.id}
                   post={post}
                   onLike={(postId) => handleLikeToggle(null as any, post, 'myPosts')}
+                  onEdit={handleEditPost}
                   isLiking={likingPostIds.has(post.id)}
+                  showEditButton={true}
                 />
               ))}
             </div>
@@ -1267,6 +1296,14 @@ export default function FeedPage() {
         <WhoToFollow className={styles.sidebarSection} />
       </aside>
       </div>
+
+      <PostEditModal
+        postId={editingPost?.id || 0}
+        initialContent={editingPost?.content || ''}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 }

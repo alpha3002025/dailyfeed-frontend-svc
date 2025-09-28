@@ -96,6 +96,7 @@ export interface Post {
   memberName?: string;
   memberHandle?: string;
   memberDisplayName?: string;
+  memberAvatarUrl?: string;
   createdAt: string;
   updatedAt?: string;
   likesCount?: number;
@@ -112,6 +113,7 @@ export interface Post {
   // Additional fields that may come from the API
   authorName?: string;
   authorHandle?: string;
+  avatarUrl?: string;
   author?: {
     name?: string;
     handle?: string;
@@ -737,6 +739,7 @@ class AuthService {
           memberName: post.authorName || post.memberName,
           memberHandle: post.authorHandle || post.memberHandle,
           memberDisplayName: post.authorName || post.memberDisplayName,
+          memberAvatarUrl: post.avatarUrl || post.memberAvatarUrl || post.authorAvatarUrl,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
           // Map count fields from backend naming to frontend naming
@@ -969,6 +972,7 @@ class AuthService {
           memberName: post.authorName || post.writerName || post.userName || post.memberName || post.author?.name || post.writer?.name || post.user?.name || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
           memberHandle: post.memberHandle || post.authorHandle || post.writerHandle || post.userHandle || post.author?.handle || post.writer?.handle || post.user?.handle || post.handle || (post.authorId ? `user${post.authorId}` : 'unknown'),
           memberDisplayName: post.authorName || post.writerName || post.userName || post.displayName || post.memberDisplayName || post.author?.displayName || post.writer?.displayName || post.user?.displayName || post.memberName || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          memberAvatarUrl: post.avatarUrl || post.memberAvatarUrl || post.authorAvatarUrl,
           createdAt: post.createdAt || post.createdDate || post.timestamp,
           updatedAt: post.updatedAt || post.updatedDate,
           authorId: post.authorId,
@@ -1031,6 +1035,7 @@ class AuthService {
           memberName: post.authorName || post.writerName || post.userName || post.memberName || post.author?.name || post.writer?.name || post.user?.name || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
           memberHandle: post.memberHandle || post.authorHandle || post.writerHandle || post.userHandle || post.author?.handle || post.writer?.handle || post.user?.handle || post.handle || (post.authorId ? `user${post.authorId}` : 'unknown'),
           memberDisplayName: post.authorName || post.writerName || post.userName || post.displayName || post.memberDisplayName || post.author?.displayName || post.writer?.displayName || post.user?.displayName || post.memberName || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          memberAvatarUrl: post.avatarUrl || post.memberAvatarUrl || post.authorAvatarUrl,
           createdAt: post.createdAt || post.createdDate || post.timestamp,
           updatedAt: post.updatedAt || post.updatedDate,
           authorId: post.authorId,
@@ -1329,6 +1334,7 @@ class AuthService {
           memberName: post.authorName || post.writerName || post.userName || post.memberName || post.author?.name || post.writer?.name || post.user?.name || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
           memberHandle: post.memberHandle || post.authorHandle || post.writerHandle || post.userHandle || post.author?.handle || post.writer?.handle || post.user?.handle || post.handle || (post.authorId ? `user${post.authorId}` : 'unknown'),
           memberDisplayName: post.authorName || post.writerName || post.userName || post.displayName || post.memberDisplayName || post.author?.displayName || post.writer?.displayName || post.user?.displayName || post.memberName || (post.authorId ? `User ${post.authorId}` : 'Unknown User'),
+          memberAvatarUrl: post.avatarUrl || post.memberAvatarUrl || post.authorAvatarUrl,
           createdAt: post.createdAt || post.createdDate || post.timestamp,
           updatedAt: post.updatedAt || post.updatedDate,
           // Store authorId for future use

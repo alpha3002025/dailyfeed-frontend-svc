@@ -3,6 +3,7 @@
 import { Post } from '@/lib/auth';
 import { extractUrls } from '@/utils/linkPreview';
 import LinkPreview from './LinkPreview';
+import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
 import styles from './PostCard.module.css';
 
 interface PostCardProps {
@@ -39,6 +40,15 @@ export default function PostCard({ post, onLike, onComment, onEdit, isLiking, sh
   return (
     <div className={`${styles.postCard} ${className || ''}`}>
       <div className={styles.postHeader}>
+        <div className={styles.authorAvatar}>
+          {hasValidAvatar(post.memberAvatarUrl) ? (
+            <img src={post.memberAvatarUrl} alt="Profile" className={styles.avatarImage} />
+          ) : (
+            <div className={styles.avatarPlaceholder}>
+              <span>{getAvatarInitial(post.memberDisplayName, post.memberName, post.memberHandle)}</span>
+            </div>
+          )}
+        </div>
         <div className={styles.authorInfo}>
           <div className={styles.authorName}>
             {post.memberDisplayName || post.memberName || post.authorName || 'Unknown'}

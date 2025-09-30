@@ -632,7 +632,7 @@ class AuthService {
   async createPost(content: string): Promise<void> {
     console.log('📝 Creating new post:', content);
     try {
-      const response = await fetch('http://localhost:8082/api/timeline/posts', {
+      const response = await fetch('http://localhost:8081/api/posts', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -664,7 +664,7 @@ class AuthService {
   async updatePost(postId: number, content: string): Promise<void> {
     console.log('✏️ Updating post:', postId, content);
     try {
-      const response = await fetch(`http://localhost:8082/api/timeline/posts/${postId}`, {
+      const response = await fetch(`http://localhost:8081/api/posts/${postId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${this.token}`,

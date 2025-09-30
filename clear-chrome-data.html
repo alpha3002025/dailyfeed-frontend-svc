@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome 브라우저 데이터 초기화</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4285f4;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #357ae8;
+        }
+        .danger {
+            background: #dc3545;
+        }
+        .danger:hover {
+            background: #c82333;
+        }
+        .success {
+            background: #28a745;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: none;
+        }
+        .status.show {
+            display: block;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        .data-item {
+            background: white;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+            border-left: 3px solid #4285f4;
+        }
+        .instructions {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ffeaa7;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Chrome 브라우저 Dailyfeed 데이터 초기화</h1>
+
+        <div class="instructions">
+            <h3>⚠️ Chrome에서 문제가 발생하는 이유:</h3>
+            <ul>
+                <li>이전 JWT 토큰이 localStorage에 남아있음</li>
+                <li>오래된 쿠키(refresh_token)가 남아있음</li>
+                <li>캐시된 데이터가 충돌을 일으킴</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>1. 현재 저장된 데이터 확인</h2>
+            <button onclick="checkCurrentData()">📋 데이터 확인</button>
+            <div id="currentData" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h2>2. LocalStorage 초기화</h2>
+            <button onclick="clearLocalStorage()">🗑️ LocalStorage 삭제</button>
+            <div id="localStorageStatus" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h2>3. 쿠키 확인 및 삭제</h2>
+            <button onclick="checkCookies()">🍪 쿠키 확인</button>
+            <button onclick="clearCookies()" class="danger">🗑️ 쿠키 삭제</button>
+            <div id="cookieStatus" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h2>4. 전체 초기화</h2>
+            <button onclick="clearAllData()" class="danger">⚡ 모든 데이터 초기화</button>
+            <div id="allClearStatus" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h2>5. Chrome 개발자 도구로 직접 초기화</h2>
+            <div class="instructions">
+                <p><strong>Chrome에서 직접 초기화하는 방법:</strong></p>
+                <ol>
+                    <li>F12 또는 우클릭 → 검사 클릭</li>
+                    <li>Application 탭 선택</li>
+                    <li>Storage → Clear site data 클릭</li>
+                    <li>또는 Console에 아래 명령어 입력:</li>
+                </ol>
+                <pre>
+// LocalStorage 초기화
+localStorage.clear();
+
+// SessionStorage 초기화
+sessionStorage.clear();
+
+// 특정 쿠키 삭제
+document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+// 페이지 새로고침
+location.reload();
+                </pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function checkCurrentData() {
+            const statusDiv = document.getElementById('currentData');
+
+            const data = {
+                localStorage: {},
+                sessionStorage: {},
+                cookies: document.cookie
+            };
+
+            // LocalStorage 데이터
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                data.localStorage[key] = localStorage.getItem(key);
+            }
+
+            // SessionStorage 데이터
+            for (let i = 0; i < sessionStorage.length; i++) {
+                const key = sessionStorage.key(i);
+                data.sessionStorage[key] = sessionStorage.getItem(key);
+            }
+
+            let html = '<h4>현재 저장된 데이터:</h4>';
+
+            html += '<div class="data-item"><strong>LocalStorage:</strong>';
+            if (Object.keys(data.localStorage).length > 0) {
+                html += '<pre>' + JSON.stringify(data.localStorage, null, 2) + '</pre>';
+            } else {
+                html += ' <em>비어있음</em>';
+            }
+            html += '</div>';
+
+            html += '<div class="data-item"><strong>SessionStorage:</strong>';
+            if (Object.keys(data.sessionStorage).length > 0) {
+                html += '<pre>' + JSON.stringify(data.sessionStorage, null, 2) + '</pre>';
+            } else {
+                html += ' <em>비어있음</em>';
+            }
+            html += '</div>';
+
+            html += '<div class="data-item"><strong>Cookies:</strong>';
+            if (data.cookies) {
+                html += '<pre>' + data.cookies + '</pre>';
+            } else {
+                html += ' <em>비어있음</em>';
+            }
+            html += '</div>';
+
+            statusDiv.innerHTML = html;
+            statusDiv.className = 'status info show';
+        }
+
+        function clearLocalStorage() {
+            const statusDiv = document.getElementById('localStorageStatus');
+            const beforeCount = localStorage.length;
+
+            // Dailyfeed 관련 항목만 삭제
+            const keysToRemove = [
+                'dailyfeed_token',
+                'user_email',
+                'user_handle',
+                'user_member_id',
+                'user_avatar_url'
+            ];
+
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+            });
+
+            statusDiv.innerHTML = `✅ LocalStorage 초기화 완료<br>삭제된 항목: ${keysToRemove.join(', ')}`;
+            statusDiv.className = 'status success show';
+        }
+
+        function checkCookies() {
+            const statusDiv = document.getElementById('cookieStatus');
+            const cookies = document.cookie;
+
+            if (cookies) {
+                const cookieList = cookies.split(';').map(c => c.trim());
+                statusDiv.innerHTML = '<strong>현재 쿠키:</strong><pre>' + cookieList.join('\n') + '</pre>';
+                statusDiv.className = 'status info show';
+            } else {
+                statusDiv.innerHTML = '쿠키가 없습니다.';
+                statusDiv.className = 'status info show';
+            }
+        }
+
+        function clearCookies() {
+            const statusDiv = document.getElementById('cookieStatus');
+
+            // refresh_token 쿠키 삭제
+            document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=localhost";
+            document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.localhost";
+
+            statusDiv.innerHTML = '✅ 쿠키 삭제 시도 완료 (refresh_token)';
+            statusDiv.className = 'status success show';
+        }
+
+        function clearAllData() {
+            const statusDiv = document.getElementById('allClearStatus');
+
+            // LocalStorage 전체 삭제
+            localStorage.clear();
+
+            // SessionStorage 전체 삭제
+            sessionStorage.clear();
+
+            // 쿠키 삭제 시도
+            document.cookie.split(";").forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+
+            statusDiv.innerHTML = `
+                <strong>✅ 전체 초기화 완료!</strong><br>
+                - LocalStorage: 삭제됨<br>
+                - SessionStorage: 삭제됨<br>
+                - Cookies: 삭제 시도됨<br>
+                <br>
+                <button onclick="location.reload()" class="success">페이지 새로고침</button>
+                <button onclick="window.location.href='http://localhost:3001'" class="success">Dailyfeed로 이동</button>
+            `;
+            statusDiv.className = 'status success show';
+        }
+
+        // 페이지 로드시 자동으로 현재 데이터 확인
+        window.onload = function() {
+            checkCurrentData();
+        };
+    </script>
+</body>
+</html>

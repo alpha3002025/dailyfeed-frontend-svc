@@ -8,24 +8,23 @@
 }
 
 .container {
-    display: flex;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    gap: 24px;
+    padding: 20px;
     min-height: 100vh;
-    gap: 32px;
-    padding: 32px;
     box-sizing: border-box;
-    overflow-x: hidden;
     background-color: #f8fafc;
     color: #1a202c;
 }
 
 /* 왼쪽 사이드바 */
 .sidebar {
-    width: 280px;
-    position: fixed;
-    height: calc(100vh - 64px);
-    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+    height: fit-content;
 }
 
 .sidebarCard {
@@ -134,9 +133,6 @@
 
 /* 메인 컨텐츠 */
 .mainContent {
-    margin-left: 312px;
-    width: calc(100% - 312px - 320px);
-    max-width: 680px;
     min-height: 100vh;
     overflow-x: hidden;
 }
@@ -461,11 +457,9 @@
 
 /* 오른쪽 사이드바 */
 .rightSidebar {
-    width: 308px;
-    position: fixed;
-    right: 32px;
-    height: calc(100vh - 64px);
-    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+    height: fit-content;
 }
 
 .sidebarSection {
@@ -570,52 +564,17 @@
     font-weight: 500;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
+    .container {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar,
     .rightSidebar {
         display: none;
     }
-
-    .mainContent {
-        width: calc(100% - 312px);
-    }
 }
 
-@media (max-width: 768px) {
-    .container {
-        padding: 16px;
-        gap: 16px;
-    }
-
-    .sidebar {
-        width: 72px;
-    }
-
-    .navText {
-        display: none;
-    }
-
-    .postButton {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        margin: 12px;
-        font-size: 24px;
-        padding: 0;
-    }
-
-    .mainContent {
-        margin-left: 88px;
-        width: calc(100% - 88px);
-    }
-
-    .username {
-        max-width: 100px;
-    }
-
-    .handle {
-        max-width: 80px;
-    }
-}
 
 /* User Section Styles */
 .userSection {

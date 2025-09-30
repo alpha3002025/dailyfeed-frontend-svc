@@ -16,7 +16,7 @@ export default function PostDetailLayout({
 }) {
   const router = useRouter();
   const { user, logout, isLoggingOut } = useAuth();
-  const [activeMenu, setActiveMenu] = useState('feed');
+  const [activeMenu, setActiveMenu] = useState('');
 
   const handleMenuClick = (menuType: string) => {
     setActiveMenu(menuType);

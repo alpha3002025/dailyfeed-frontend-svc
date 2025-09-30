@@ -632,7 +632,7 @@ class AuthService {
   async createPost(content: string): Promise<void> {
     console.log('📝 Creating new post:', content);
     try {
-      const response = await fetch('http://localhost:8081/api/posts', {
+      const response = await fetch('http://localhost:8082/api/timeline/posts', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -664,7 +664,7 @@ class AuthService {
   async updatePost(postId: number, content: string): Promise<void> {
     console.log('✏️ Updating post:', postId, content);
     try {
-      const response = await fetch(`http://localhost:8081/api/posts/${postId}`, {
+      const response = await fetch(`http://localhost:8082/api/timeline/posts/${postId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -696,7 +696,7 @@ class AuthService {
   async getUserPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     console.log('📖 Fetching user posts...');
     try {
-      const response = await fetch(`http://localhost:8081/api/posts?page=${page}&size=${size}`, {
+      const response = await fetch(`http://localhost:8082/api/timeline/posts?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -761,7 +761,7 @@ class AuthService {
   async getPostDetail(postId: number): Promise<PostDetail> {
     console.log('📄 Fetching post detail for ID:', postId);
     try {
-      const response = await fetch(`http://localhost:8081/api/posts/${postId}`, {
+      const response = await fetch(`http://localhost:8082/api/timeline/posts/${postId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,

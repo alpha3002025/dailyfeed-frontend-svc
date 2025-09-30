@@ -4,6 +4,7 @@ import { Post } from '@/lib/auth';
 import { extractUrls } from '@/utils/linkPreview';
 import LinkPreview from './LinkPreview';
 import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
+import { useRouter } from 'next/navigation';
 import styles from './PostCard.module.css';
 
 interface PostCardProps {
@@ -17,8 +18,18 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post, onLike, onComment, onEdit, isLiking, showEditButton = false, className }: PostCardProps) {
+  const router = useRouter();
   const urls = extractUrls(post.content);
   const firstUrl = urls.length > 0 ? urls[0] : null;
+
+  const handlePostClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on buttons or interactive elements
+    if ((e.target as HTMLElement).closest('button') ||
+        (e.target as HTMLElement).closest('a')) {
+      return;
+    }
+    router.push(`/post/${post.id}`);
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -38,7 +49,11 @@ export default function PostCard({ post, onLike, onComment, onEdit, isLiking, sh
   };
 
   return (
-    <div className={`${styles.postCard} ${className || ''}`}>
+    <div
+      className={`${styles.postCard} ${className || ''}`}
+      onClick={handlePostClick}
+      style={{ cursor: 'pointer' }}
+    >
       <div className={styles.postHeader}>
         <div className={styles.authorAvatar}>
           {hasValidAvatar(post.memberAvatarUrl) ? (

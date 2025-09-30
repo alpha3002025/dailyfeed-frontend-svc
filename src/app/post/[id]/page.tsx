@@ -22,9 +22,13 @@ export default function PostDetailPage() {
   const [isLiking, setIsLiking] = useState(false);
 
   useEffect(() => {
-    if (postId) {
+    if (postId && !isNaN(postId)) {
       fetchPostDetail();
       fetchComments();
+    } else {
+      setPostError('잘못된 게시글 ID입니다.');
+      setIsLoadingPost(false);
+      setIsLoadingComments(false);
     }
   }, [postId]);
 

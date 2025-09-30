@@ -799,7 +799,7 @@ class AuthService {
         memberHandle: postDetail.authorHandle || postDetail.memberHandle,
         memberDisplayName: postDetail.authorName || postDetail.memberDisplayName,
         memberId: postDetail.authorId || postDetail.memberId,
-        memberAvatarUrl: postDetail.memberAvatarUrl,
+        memberAvatarUrl: postDetail.authorAvatarUrl || postDetail.memberAvatarUrl,
         createdAt: postDetail.createdAt,
         updatedAt: postDetail.updatedAt,
         // Map count fields from backend naming to frontend naming
@@ -842,16 +842,26 @@ class AuthService {
       console.log('✅ Comments fetched successfully:', result);
 
       // Handle different response structures
+      let comments: Comment[] = [];
       if (result.data && Array.isArray(result.data)) {
-        return result.data;
+        comments = result.data;
       } else if (result.data && result.data.content) {
-        return result.data.content;
+        comments = result.data.content;
       } else if (Array.isArray(result)) {
-        return result;
+        comments = result;
       } else {
         console.warn('Unexpected response structure:', result);
         return [];
       }
+
+      // Map backend field names to frontend field names
+      return comments.map((comment: any) => ({
+        ...comment,
+        memberName: comment.authorName || comment.memberName,
+        memberHandle: comment.authorHandle || comment.memberHandle,
+        memberDisplayName: comment.authorName || comment.memberDisplayName,
+        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl
+      }));
     } catch (error) {
       console.error('❌ Error fetching comments:', error);
       throw error;

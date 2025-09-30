@@ -820,7 +820,7 @@ class AuthService {
   async getPostComments(postId: number): Promise<Comment[]> {
     console.log('💬 Fetching comments for post ID:', postId);
     try {
-      const response = await fetch(`http://localhost:8081/api/comments/post/${postId}`, {
+      const response = await fetch(`http://localhost:8082/api/timeline/posts/${postId}/comments`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,

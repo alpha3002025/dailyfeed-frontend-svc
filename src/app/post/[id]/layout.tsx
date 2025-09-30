@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import WhoToFollow from '@/components/WhoToFollow';
 import Following from '@/components/Following';
 import styles from './layout.module.css';
@@ -30,12 +32,13 @@ export default function PostDetailLayout({
   };
 
   return (
-    <div className={styles.pageWrapper}>
+    <ProtectedRoute>
+      <div className={styles.pageWrapper}>
       <div className={styles.container}>
         {/* 왼쪽 사이드바 */}
         <nav className={styles.sidebar}>
           <div className={styles.sidebarCard}>
-            <div className={styles.logo}>
+            <div className={styles.logo} onClick={() => router.push('/')} style={{ cursor: 'pointer' }}>
               <h1>Dailyfeed</h1>
             </div>
 
@@ -89,11 +92,34 @@ export default function PostDetailLayout({
                   <span className={styles.navText}>My feed</span>
                 </a>
               </li>
+              <li className={styles.navItem}>
+                <a
+                  href="#"
+                  className={`${styles.navLink} ${activeMenu === 'profile' ? styles.active : ''}`}
+                  onClick={(e) => { e.preventDefault(); handleMenuClick('profile'); }}
+                >
+                  <svg className={styles.navIcon} viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                  </svg>
+                  <span className={styles.navText}>Profile</span>
+                </a>
+              </li>
+              <li className={styles.navItem}>
+                <a
+                  href="/connections"
+                  className={styles.navLink}
+                >
+                  <svg className={styles.navIcon} viewBox="0 0 24 24">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                  </svg>
+                  <span className={styles.navText}>Connections</span>
+                </a>
+              </li>
             </ul>
 
             <button
               className={styles.postButton}
-              onClick={() => router.push('/feed')}
+              onClick={() => router.push('/feed?menu=feed')}
             >
               ✍️ Share thoughts
             </button>
@@ -102,10 +128,10 @@ export default function PostDetailLayout({
             <div className={styles.userSection}>
               <div className={styles.userInfo}>
                 <div className={styles.userAvatar}>
-                  {user?.avatarUrl ? (
-                    <img src={user.avatarUrl} alt="Profile" />
+                  {hasValidAvatar(user?.avatarUrl) ? (
+                    <img src={user?.avatarUrl || ''} alt="Profile" />
                   ) : (
-                    <span>{user?.displayName?.charAt(0) || 'U'}</span>
+                    <span>{getAvatarInitial(user?.displayName, user?.memberName, user?.handle)}</span>
                   )}
                 </div>
                 <div className={styles.userDetails}>
@@ -148,5 +174,6 @@ export default function PostDetailLayout({
         </aside>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

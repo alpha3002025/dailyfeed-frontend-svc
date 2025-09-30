@@ -8,24 +8,23 @@
 }
 
 .container {
-    display: flex;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
+    display: grid;
+    grid-template-columns: 280px 1fr 320px;
+    gap: 24px;
+    padding: 20px;
     min-height: 100vh;
-    gap: 32px;
-    padding: 32px;
     box-sizing: border-box;
-    overflow-x: hidden;
     background-color: #f8fafc;
     color: #1a202c;
 }
 
 /* 왼쪽 사이드바 */
 .sidebar {
-    width: 280px;
-    position: fixed;
-    height: calc(100vh - 64px);
-    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+    height: fit-content;
 }
 
 .sidebarCard {
@@ -134,19 +133,15 @@
 
 /* 메인 컨텐츠 */
 .mainContent {
-    margin-left: 312px;
-    width: calc(100% - 312px - 340px);
     min-height: 100vh;
     overflow-x: hidden;
 }
 
 /* 오른쪽 사이드바 */
 .rightSidebar {
-    width: 308px;
-    position: fixed;
-    right: 32px;
-    height: calc(100vh - 64px);
-    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+    height: fit-content;
 }
 
 .sidebarSection {

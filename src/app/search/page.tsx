@@ -204,7 +204,7 @@ export default function SearchPage() {
               <div className={styles.userInfo}>
                 <div className={styles.userAvatar}>
                   {hasValidAvatar(user?.avatarUrl) ? (
-                    <img src={user.avatarUrl!} alt="Profile" />
+                    <img src={user?.avatarUrl || ''} alt="Profile" />
                   ) : (
                     <span>{getAvatarInitial(user?.displayName, user?.memberName, user?.handle)}</span>
                   )}

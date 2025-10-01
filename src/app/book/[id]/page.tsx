@@ -6,9 +6,7 @@ import ReviewItem from "@/components/review-item";
 import ReviewEditor from "@/components/review-editor";
 import Image from "next/image";
 
-export function generateStaticParams() {
-  return [{id: "1"}, {id: "2"}, {id: "3"}];
-}
+export const dynamic = 'force-dynamic';
 
 async function BookDetail({bookId}: {bookId: string}){
   const response = await fetch(

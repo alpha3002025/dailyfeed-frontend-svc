@@ -136,6 +136,12 @@ export interface Comment {
   memberHandle?: string;
   memberDisplayName?: string;
   memberAvatarUrl?: string;
+  memberId?: number;
+  authorId?: number;
+  authorName?: string;
+  authorHandle?: string;
+  authorAvatarUrl?: string;
+  parentId?: number | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -175,6 +181,21 @@ export interface FollowersFollowingsResponse {
 
 class AuthService {
   private token: string | null = null;
+
+  // JWT decode helper function
+  private decodeJWT(token: string): any {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      return JSON.parse(jsonPayload);
+    } catch (error) {
+      console.error('Failed to decode JWT:', error);
+      return null;
+    }
+  }
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -294,10 +315,20 @@ class AuthService {
       this.setToken(token);
       console.log('🔍 Token after storage:', this.getToken() ? 'Token stored successfully' : 'Token storage failed');
 
+      // Try to decode JWT to get user ID
+      let decodedToken: any = null;
+      if (token && token !== 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IiAyHJAm9haWwuY29tIiwiaWF0IjoxNzU4NTg4Nzk3fQ.temp_signature_for_dev') {
+        decodedToken = this.decodeJWT(token);
+        console.log('🔐 Decoded JWT token:', decodedToken);
+      }
+
       // Create user object from response data
       // Extract user details from the login response
       // Check multiple possible field names for memberId
-      const extractedMemberId = responseData.memberId ||
+      const extractedMemberId = decodedToken?.memberId ||
+                               decodedToken?.id ||
+                               decodedToken?.userId ||
+                               responseData.memberId ||
                                responseData.member_id ||
                                responseData.id ||
                                responseData.userId ||
@@ -307,7 +338,9 @@ class AuthService {
                                responseData.data?.memberId ||
                                responseData.data?.id;
 
-      console.log('🔍 Searching for memberId in response:', {
+      console.log('🔍 Searching for memberId in response and JWT:', {
+        'decodedToken?.memberId': decodedToken?.memberId,
+        'decodedToken?.id': decodedToken?.id,
         'responseData.memberId': responseData.memberId,
         'responseData.member_id': responseData.member_id,
         'responseData.id': responseData.id,
@@ -317,6 +350,25 @@ class AuthService {
         'extracted': extractedMemberId
       });
 
+      // Check if avatar URL exists in different possible locations
+      const avatarUrl = responseData.avatarUrl ||
+                       responseData.avatar_url ||
+                       responseData.profileImageUrl ||
+                       responseData.profile_image_url ||
+                       responseData.content?.avatarUrl ||
+                       responseData.content?.profileImageUrl ||
+                       responseData.data?.avatarUrl ||
+                       responseData.data?.profileImageUrl ||
+                       null;
+
+      console.log('🖼️ Avatar URL search:', {
+        'responseData.avatarUrl': responseData.avatarUrl,
+        'responseData.profileImageUrl': responseData.profileImageUrl,
+        'responseData.content?.avatarUrl': responseData.content?.avatarUrl,
+        'responseData.data?.avatarUrl': responseData.data?.avatarUrl,
+        'extracted': avatarUrl
+      });
+
       const userData: AuthUser = {
         id: extractedMemberId?.toString() || 'temp-id',
         email: responseData.email || responseData.content?.email || credentials.email,
@@ -324,7 +376,7 @@ class AuthService {
         handle: responseData.handle || responseData.content?.handle || responseData.memberHandle || credentials.email.split('@')[0],
         displayName: responseData.displayName || responseData.content?.displayName || responseData.memberName || responseData.name || credentials.email.split('@')[0],
         memberId: extractedMemberId ? (typeof extractedMemberId === 'number' ? extractedMemberId : parseInt(extractedMemberId)) : undefined,
-        avatarUrl: responseData.avatarUrl || responseData.content?.avatarUrl || responseData.profileImageUrl,
+        avatarUrl: avatarUrl,
         followersCount: responseData.followersCount || responseData.content?.followersCount,
         followingCount: responseData.followingCount || responseData.content?.followingCount,
       };
@@ -732,7 +784,7 @@ class AuthService {
       }
 
       // Map backend field names to frontend field names
-      return posts.map(post => {
+      return posts.map((post: any) => {
         const mappedPost = {
           id: post.id,
           content: post.content,
@@ -857,6 +909,8 @@ class AuthService {
       // Map backend field names to frontend field names
       return comments.map((comment: any) => ({
         ...comment,
+        memberId: comment.authorId || comment.memberId,
+        authorId: comment.authorId || comment.memberId,
         memberName: comment.authorName || comment.memberName,
         memberHandle: comment.authorHandle || comment.memberHandle,
         memberDisplayName: comment.authorName || comment.memberDisplayName,
@@ -864,6 +918,125 @@ class AuthService {
       }));
     } catch (error) {
       console.error('❌ Error fetching comments:', error);
+      throw error;
+    }
+  }
+
+  // Create a comment
+  async createComment(postId: number, content: string, parentId?: number | null): Promise<Comment> {
+    console.log('💬 Creating comment for post ID:', postId);
+    try {
+      const response = await fetch('http://localhost:8081/api/comments', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          postId,
+          parentId: parentId || null
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to create comment:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to create comment: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Comment created successfully:', result);
+
+      // Map backend field names to frontend field names
+      const comment = result.data || result;
+      return {
+        ...comment,
+        memberId: comment.authorId || comment.memberId,
+        authorId: comment.authorId || comment.memberId,
+        memberName: comment.authorName || comment.memberName,
+        memberHandle: comment.authorHandle || comment.memberHandle,
+        memberDisplayName: comment.authorName || comment.memberDisplayName,
+        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl
+      };
+    } catch (error) {
+      console.error('❌ Error creating comment:', error);
+      throw error;
+    }
+  }
+
+  // Update a comment
+  async updateComment(commentId: number, content: string): Promise<Comment> {
+    console.log('✏️ Updating comment ID:', commentId);
+    try {
+      const response = await fetch(`http://localhost:8081/api/comments/${commentId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to update comment:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to update comment: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Comment updated successfully:', result);
+
+      // Map backend field names to frontend field names
+      const comment = result.data || result;
+      return {
+        ...comment,
+        memberId: comment.authorId || comment.memberId,
+        authorId: comment.authorId || comment.memberId,
+        memberName: comment.authorName || comment.memberName,
+        memberHandle: comment.authorHandle || comment.memberHandle,
+        memberDisplayName: comment.authorName || comment.memberDisplayName,
+        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl
+      };
+    } catch (error) {
+      console.error('❌ Error updating comment:', error);
+      throw error;
+    }
+  }
+
+  // Delete a comment
+  async deleteComment(commentId: number): Promise<void> {
+    console.log('🗑️ Deleting comment ID:', commentId);
+    try {
+      const response = await fetch(`http://localhost:8081/api/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to delete comment:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to delete comment: ${response.status}`);
+      }
+
+      console.log('✅ Comment deleted successfully');
+    } catch (error) {
+      console.error('❌ Error deleting comment:', error);
       throw error;
     }
   }
@@ -975,7 +1148,7 @@ class AuthService {
       }
 
       // Map backend field names to frontend field names
-      return posts.map(post => {
+      return posts.map((post: any) => {
         const mappedPost = {
           id: post.id || post._id,
           content: post.content,
@@ -1038,7 +1211,7 @@ class AuthService {
       }
 
       // Map backend field names to frontend field names
-      return posts.map(post => {
+      return posts.map((post: any) => {
         const mappedPost = {
           id: post.id || post._id,
           content: post.content,
@@ -1328,7 +1501,7 @@ class AuthService {
         return [];
       }
 
-      return posts.map(post => {
+      return posts.map((post: any) => {
         const mappedPost = {
           id: post.id || post._id,
           content: post.content,
@@ -1389,7 +1562,7 @@ class AuthService {
       }
 
       // Map backend field names to frontend field names (following same pattern as getUserPosts)
-      return posts.map(post => {
+      return posts.map((post: any) => {
         // Map backend field names to frontend field names
 
         const mappedPost = {
@@ -1455,6 +1628,12 @@ export const getPostDetail = (postId: number) =>
   authService.getPostDetail(postId);
 export const getPostComments = (postId: number) =>
   authService.getPostComments(postId);
+export const createComment = (postId: number, content: string, parentId?: number | null) =>
+  authService.createComment(postId, content, parentId);
+export const updateComment = (commentId: number, content: string) =>
+  authService.updateComment(commentId, content);
+export const deleteComment = (commentId: number) =>
+  authService.deleteComment(commentId);
 export const likePost = (postId: number) =>
   authService.likePost(postId);
 export const unlikePost = (postId: number) =>

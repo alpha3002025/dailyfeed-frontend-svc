@@ -1,0 +1,220 @@
+.comment {
+  display: flex;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f3f4;
+}
+
+.comment:last-child {
+  border-bottom: none;
+}
+
+.commentAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 500;
+  font-size: 16px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.commentAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.commentContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.commentAuthor {
+  font-weight: 600;
+  color: #0f1419;
+}
+
+.commentHandle {
+  color: #536471;
+}
+
+.commentTime {
+  color: #536471;
+}
+
+.editedTag {
+  color: #8899a6;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.commentText {
+  font-size: 15px;
+  line-height: 1.4;
+  color: #0f1419;
+  word-wrap: break-word;
+}
+
+.commentText p {
+  margin-bottom: 8px;
+}
+
+.commentText p:last-child {
+  margin-bottom: 0;
+}
+
+.commentActions {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.actionButton {
+  background: none;
+  border: none;
+  color: #536471;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.2s ease;
+}
+
+.actionButton:hover {
+  color: #000000;
+}
+
+.editForm {
+  margin-top: 12px;
+}
+
+.editTextarea {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #1a202c;
+  background: #ffffff;
+  resize: vertical;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.editTextarea:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.editTextarea:disabled {
+  background: #f7fafc;
+  cursor: not-allowed;
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.saveButton {
+  padding: 6px 16px;
+  background: #000000;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveButton:hover:not(:disabled) {
+  background: #1a1a1a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.saveButton:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  padding: 6px 16px;
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #edf2f7;
+  border-color: #cbd5e0;
+}
+
+.cancelButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deleteConfirm {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+.deleteConfirm p {
+  color: #991b1b;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 8px;
+}
+
+.deleteButton {
+  padding: 6px 16px;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.deleteButton:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.deleteButton:disabled {
+  background: #f87171;
+  cursor: not-allowed;
+}

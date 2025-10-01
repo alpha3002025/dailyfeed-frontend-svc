@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getPostDetail, getPostComments, likePost, unlikePost } from '@/lib/auth';
+import { getPostDetail, getPostComments, likePost, unlikePost, createComment, updateComment, deleteComment } from '@/lib/auth';
 import type { Post, PostDetail, Comment } from '@/lib/auth';
 import PostCard from '@/components/PostCard';
+import CommentForm from '@/components/CommentForm';
+import CommentItem from '@/components/CommentItem';
 import styles from './postDetail.module.css';
 
 export default function PostDetailPage() {
@@ -61,22 +63,35 @@ export default function PostDetailPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(hours / 24);
+  const handleCreateComment = async (content: string) => {
+    try {
+      const newComment = await createComment(postId, content);
+      setComments([newComment, ...comments]);
+    } catch (error) {
+      console.error('Failed to create comment:', error);
+      throw error;
+    }
+  };
 
-    if (hours < 1) {
-      const minutes = Math.floor(diff / (1000 * 60));
-      return minutes <= 1 ? '방금 전' : `${minutes}분 전`;
-    } else if (hours < 24) {
-      return `${hours}시간 전`;
-    } else if (days < 7) {
-      return `${days}일 전`;
-    } else {
-      return date.toLocaleDateString('ko-KR');
+  const handleUpdateComment = async (commentId: number, content: string) => {
+    try {
+      const updatedComment = await updateComment(commentId, content);
+      setComments(comments.map(comment =>
+        comment.id === commentId ? { ...comment, content: updatedComment.content, updatedAt: updatedComment.updatedAt } : comment
+      ));
+    } catch (error) {
+      console.error('Failed to update comment:', error);
+      throw error;
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    try {
+      await deleteComment(commentId);
+      setComments(comments.filter(comment => comment.id !== commentId));
+    } catch (error) {
+      console.error('Failed to delete comment:', error);
+      throw error;
     }
   };
 
@@ -156,6 +171,11 @@ export default function PostDetailPage() {
         <section className={styles.commentsSection}>
           <h2 className={styles.commentsTitle}>댓글 {comments.length}개</h2>
 
+          {/* Comment Input Form */}
+          {user && !isLoadingPost && post && (
+            <CommentForm onSubmit={handleCreateComment} />
+          )}
+
           {isLoadingComments ? (
             <div className={styles.loading}>
               <div className={styles.spinner}></div>
@@ -176,33 +196,12 @@ export default function PostDetailPage() {
           ) : (
             <div className={styles.commentsList}>
               {comments.map((comment) => (
-                <div key={comment.id} className={styles.comment}>
-                  <div className={styles.commentAvatar}>
-                    {comment.memberAvatarUrl ? (
-                      <img src={comment.memberAvatarUrl} alt={comment.memberDisplayName || comment.memberName} />
-                    ) : (
-                      <span>{(comment.memberDisplayName || comment.memberName || 'U').charAt(0)}</span>
-                    )}
-                  </div>
-                  <div className={styles.commentContent}>
-                    <div className={styles.commentHeader}>
-                      <span className={styles.commentAuthor}>
-                        {comment.memberDisplayName || comment.memberName || 'Unknown User'}
-                      </span>
-                      <span className={styles.commentHandle}>
-                        @{comment.memberHandle || 'unknown'}
-                      </span>
-                      <span className={styles.commentTime}>
-                        · {formatDate(comment.createdAt)}
-                      </span>
-                    </div>
-                    <div className={styles.commentText}>
-                      {comment.content.split('\n').map((line, index) => (
-                        <p key={index}>{line || '\u00A0'}</p>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <CommentItem
+                  key={comment.id}
+                  comment={comment}
+                  onUpdate={handleUpdateComment}
+                  onDelete={handleDeleteComment}
+                />
               ))}
             </div>
           )}

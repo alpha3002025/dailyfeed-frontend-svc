@@ -342,9 +342,11 @@ export default function FeedPage() {
     }
   };
 
-  const handleLikeToggle = async (e: React.MouseEvent, post: Post, source: 'myPosts' | 'followingPosts' | 'popularPosts' | 'commentedPosts' = 'myPosts') => {
-    e.stopPropagation(); // Prevent navigation to post detail
-    e.preventDefault();
+  const handleLikeToggle = async (e: React.MouseEvent | null, post: Post, source: 'myPosts' | 'followingPosts' | 'popularPosts' | 'commentedPosts' = 'myPosts') => {
+    if (e) {
+      e.stopPropagation(); // Prevent navigation to post detail
+      e.preventDefault();
+    }
 
     if (!user || likingPostIds.has(post.id)) return;
 
@@ -479,7 +481,7 @@ export default function FeedPage() {
       <PostCard
         key={post.id}
         post={post}
-        onLike={(postId) => handleLikeToggle(null as any, post, source)}
+        onLike={(postId) => handleLikeToggle(null, post, source)}
         onComment={(postId) => router.push(`/post/${postId}`)}
         isLiking={likingPostIds.has(post.id)}
       />
@@ -835,7 +837,7 @@ export default function FeedPage() {
           <div className={styles.composeContent}>
             <div className={styles.avatar}>
               {hasValidAvatar(user?.avatarUrl) ? (
-                <img src={user.avatarUrl!} alt="Profile" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
+                <img src={user?.avatarUrl || ''} alt="Profile" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
               ) : (
                 <span>{getAvatarInitial(user?.displayName, user?.memberName, user?.handle)}</span>
               )}

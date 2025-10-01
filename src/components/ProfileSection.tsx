@@ -23,7 +23,7 @@ interface ProfileSectionProps {
   isPosting: boolean;
   postError: string;
   postSuccess: boolean;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onEditProfile: () => void;
   onCancelProfileEdit: () => void;

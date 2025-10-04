@@ -798,7 +798,8 @@ class AuthService {
           likesCount: post.likeCount ?? post.likesCount ?? 0,
           commentsCount: post.commentCount ?? post.commentsCount ?? 0,
           sharesCount: post.shareCount ?? post.sharesCount ?? 0,
-          isLiked: post.isLiked ?? false
+          // Map liked status - backend may use 'liked' or 'isLiked'
+          isLiked: post.liked ?? post.isLiked ?? false
         };
         console.log(`Post ${mappedPost.id} - likesCount: ${mappedPost.likesCount}, isLiked: ${mappedPost.isLiked}`);
         return mappedPost;
@@ -858,7 +859,8 @@ class AuthService {
         likesCount: postDetail.likeCount ?? postDetail.likesCount ?? 0,
         commentsCount: postDetail.commentCount ?? postDetail.commentsCount ?? 0,
         sharesCount: postDetail.shareCount ?? postDetail.sharesCount ?? 0,
-        isLiked: postDetail.isLiked ?? false
+        // Map liked status - backend may use 'liked' or 'isLiked'
+        isLiked: postDetail.liked ?? postDetail.isLiked ?? false
       };
       console.log(`Post detail ${mappedPostDetail.id} - likesCount: ${mappedPostDetail.likesCount}, isLiked: ${mappedPostDetail.isLiked}`);
       return mappedPostDetail;
@@ -1162,7 +1164,8 @@ class AuthService {
           likesCount: post.likeCount ?? post.likesCount ?? 0,
           commentsCount: post.commentCount ?? post.commentsCount ?? 0,
           sharesCount: post.shareCount ?? post.sharesCount ?? 0,
-          isLiked: post.isLiked ?? false
+          // Map liked status - backend may use 'liked' or 'isLiked'
+          isLiked: post.liked ?? post.isLiked ?? false
         };
         return mappedPost;
       });
@@ -1225,7 +1228,8 @@ class AuthService {
           likesCount: post.likeCount ?? post.likesCount ?? 0,
           commentsCount: post.commentCount ?? post.commentsCount ?? 0,
           sharesCount: post.shareCount ?? post.sharesCount ?? 0,
-          isLiked: post.isLiked ?? false
+          // Map liked status - backend may use 'liked' or 'isLiked'
+          isLiked: post.liked ?? post.isLiked ?? false
         };
         return mappedPost;
       });
@@ -1515,7 +1519,8 @@ class AuthService {
           likesCount: post.likeCount ?? post.likesCount ?? 0,
           commentsCount: post.commentCount ?? post.commentsCount ?? 0,
           sharesCount: post.shareCount ?? post.sharesCount ?? 0,
-          isLiked: post.isLiked ?? false
+          // Map liked status - backend may use 'liked' or 'isLiked'
+          isLiked: post.liked ?? post.isLiked ?? false
         };
         return mappedPost;
       });
@@ -1582,7 +1587,8 @@ class AuthService {
           likesCount: post.likeCount ?? post.likesCount ?? 0,
           commentsCount: post.commentCount ?? post.commentsCount ?? 0,
           sharesCount: post.shareCount ?? post.sharesCount ?? 0,
-          isLiked: post.isLiked ?? false
+          // Map liked status - backend may use 'liked' or 'isLiked'
+          isLiked: post.liked ?? post.isLiked ?? false
         };
         return mappedPost;
       });

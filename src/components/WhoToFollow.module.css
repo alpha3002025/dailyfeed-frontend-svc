@@ -6,6 +6,12 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+.scrollContainer {
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .loadingContainer,
 .errorContainer,
 .emptyContainer {

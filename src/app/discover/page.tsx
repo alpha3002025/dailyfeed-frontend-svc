@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFollowing } from '@/contexts/FollowingContext';
 import Following from '@/components/Following';
+import WhoToFollow from '@/components/WhoToFollow';
 import {
   getRecommendedMembers,
   followMember,
@@ -37,6 +38,18 @@ export default function DiscoverPage() {
   }, [isAuthenticated, authLoading, router]);
 
   useEffect(() => {
+    if (scrollContainerRef.current) {
+      const { scrollHeight, clientHeight } = scrollContainerRef.current;
+      console.log('📦 Container info:', {
+        scrollHeight,
+        clientHeight,
+        isScrollable: scrollHeight > clientHeight,
+        membersCount: members.length
+      });
+    }
+  }, [members]);
+
+  useEffect(() => {
     if (isAuthenticated) {
       loadInitialData();
     }
@@ -46,10 +59,12 @@ export default function DiscoverPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await getRecommendedMembers(0, 10);
+      const response = await getRecommendedMembers(0, 20);
+      console.log('✅ Initial members response:', response);
       setMembers(response.content || []);
-      setHasMore((response.content || []).length >= 10);
+      setHasMore(response.hasNext ?? !response.last);
       setPage(0);
+      console.log('📊 Initial - Has more:', response.hasNext, 'Last:', response.last);
     } catch (err: any) {
       setError(err.message || '추천 멤버를 불러오는데 실패했습니다.');
       console.error(err);
@@ -59,17 +74,23 @@ export default function DiscoverPage() {
   };
 
   const loadMoreMembers = async () => {
-    if (loadingMore || !hasMore) return;
+    if (loadingMore || !hasMore) {
+      console.log('⏭️ Skipping loadMore:', { loadingMore, hasMore });
+      return;
+    }
 
     try {
       setLoadingMore(true);
       const nextPage = page + 1;
-      const response = await getRecommendedMembers(nextPage, 10);
+      console.log('🔄 Loading more members, page:', nextPage);
+      const response = await getRecommendedMembers(nextPage, 20);
+      console.log('✅ More members loaded:', response);
 
       if (response.content && response.content.length > 0) {
         setMembers(prev => [...prev, ...response.content]);
         setPage(nextPage);
-        setHasMore(response.content.length >= 10);
+        setHasMore(response.hasNext ?? !response.last);
+        console.log('📊 Updated - Has more:', response.hasNext, 'Last:', response.last);
       } else {
         setHasMore(false);
       }
@@ -82,9 +103,20 @@ export default function DiscoverPage() {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const element = e.currentTarget;
-    const bottom = element.scrollHeight - element.scrollTop <= element.clientHeight + 50;
+    const { scrollTop, scrollHeight, clientHeight } = element;
+    const bottom = scrollHeight - scrollTop <= clientHeight + 50;
+
+    console.log('📜 Scroll event:', {
+      scrollTop,
+      scrollHeight,
+      clientHeight,
+      bottom,
+      hasMore,
+      loadingMore
+    });
 
     if (bottom) {
+      console.log('🎯 Bottom reached, calling loadMoreMembers');
       loadMoreMembers();
     }
   };
@@ -211,6 +243,7 @@ export default function DiscoverPage() {
             className={styles.listContainer}
             onScroll={handleScroll}
             ref={scrollContainerRef}
+            onLoad={() => console.log('✅ Container loaded')}
           >
             {displayMembers.length === 0 && !loadingMore ? (
               <div className={styles.emptyState}>
@@ -273,9 +306,8 @@ export default function DiscoverPage() {
         </div>
 
         <aside className={styles.rightSidebar}>
-          <Following
-            className={styles.followingSection}
-          />
+          <Following className={styles.sidebarSection} />
+          <WhoToFollow className={styles.sidebarSection} />
         </aside>
       </div>
     </div>

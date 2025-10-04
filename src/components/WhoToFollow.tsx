@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getRecommendedMembers, followMember, unfollowMember, RecommendedMember } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
@@ -21,6 +21,10 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
   const [error, setError] = useState<string | null>(null);
   const [followingMembers, setFollowingMembers] = useState<Set<string>>(new Set());
   const [loadingFollowActions, setLoadingFollowActions] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchRecommendedMembers = async () => {
@@ -53,7 +57,9 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
         const response = await getRecommendedMembers(0, 10);
         console.log('✅ Recommended members response:', response);
         setMembers(response.content || []);
+        setHasMore(response.hasNext ?? !response.last);
         console.log('👥 Set members count:', response.content?.length || 0);
+        console.log('📊 Has more:', response.hasNext, 'Last:', response.last);
       } catch (err) {
         console.error('❌ Failed to fetch recommended members:', err);
         setError('팔로우 추천 목록을 불러올 수 없습니다.');
@@ -66,6 +72,46 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
 
     fetchRecommendedMembers();
   }, [isAuthenticated, authLoading]);
+
+  const loadMore = useCallback(async () => {
+    if (!hasMore || loadingMore || !isAuthenticated) {
+      console.log('⏭️ Skipping loadMore:', { hasMore, loadingMore, isAuthenticated });
+      return;
+    }
+
+    try {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+      console.log('🔄 Loading more members, page:', nextPage);
+      const response = await getRecommendedMembers(nextPage, 10);
+      console.log('✅ More members loaded:', response);
+
+      setMembers(prev => [...prev, ...(response.content || [])]);
+      setPage(nextPage);
+      setHasMore(response.hasNext ?? !response.last);
+      console.log('📊 Updated - Has more:', response.hasNext, 'Last:', response.last);
+    } catch (err) {
+      console.error('❌ Failed to load more members:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [page, hasMore, loadingMore, isAuthenticated]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      // Load more when scrolled to bottom (with 100px threshold)
+      if (scrollHeight - scrollTop - clientHeight < 100) {
+        loadMore();
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [loadMore]);
 
   const handleMemberClick = (handle: string) => {
     router.push(`/${handle}`);
@@ -187,6 +233,7 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
   return (
     <div className={className}>
       <div className={styles.sectionHeader}>👥 Who to follow</div>
+      <div className={styles.scrollContainer} ref={containerRef}>
       {members.map((member) => (
         <div key={member.id} className={styles.memberItem}>
           <div
@@ -232,14 +279,22 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
           </button>
         </div>
       ))}
-      <div className={styles.showMoreContainer}>
-        <button
-          className={styles.showMoreButton}
-          onClick={() => router.push('/discover')}
-        >
-          Show more
-        </button>
+      {loadingMore && (
+        <div className={styles.loadingContainer}>
+          <div className={styles.loadingText}>로딩 중...</div>
+        </div>
+      )}
       </div>
+      {members.length > 0 && (
+        <div className={styles.showMoreContainer}>
+          <button
+            className={styles.showMoreButton}
+            onClick={() => router.push('/discover')}
+          >
+            Show more
+          </button>
+        </div>
+      )}
     </div>
   );
 }

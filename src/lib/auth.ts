@@ -69,6 +69,10 @@ export interface RecommendedMembersApiResponse {
     size: number;
     totalElements?: number;
     totalPages?: number;
+    hasNext?: boolean;
+    hasPrevious?: boolean;
+    first?: boolean;
+    last?: boolean;
   };
 }
 
@@ -78,6 +82,10 @@ export interface RecommendedMembersResponse {
   size: number;
   totalElements?: number;
   totalPages?: number;
+  hasNext?: boolean;
+  hasPrevious?: boolean;
+  first?: boolean;
+  last?: boolean;
 }
 
 export interface FollowingMember {

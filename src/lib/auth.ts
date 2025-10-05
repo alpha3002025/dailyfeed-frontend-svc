@@ -587,14 +587,19 @@ class AuthService {
   // Follow a member
   async followMember(memberIdToFollow: number): Promise<void> {
     console.log('🔄 Follow API request:', { memberIdToFollow });
-    console.log('📤 Sending follow request with body:', JSON.stringify({ memberIdToFollow }));
+    console.log('📤 Sending follow request for memberId:', memberIdToFollow);
 
     try {
-      const result = await this.apiCall<any>('/api/members/follow', {
+      const result = await this.apiCall<any>(`/api/members/follow/${memberIdToFollow}`, {
         method: 'POST',
-        body: JSON.stringify({ memberIdToFollow }),
       });
       console.log('✅ Follow API response:', result);
+
+      // Check for FAIL resultCode
+      if (result.resultCode === 'FAIL') {
+        const errorMessage = result.message || '팔로우에 실패했습니다.';
+        throw new Error(errorMessage);
+      }
     } catch (error: any) {
       console.error('❌ Follow API error:', error);
       console.error('❌ Error details:', {
@@ -615,9 +620,8 @@ class AuthService {
   async unfollowMember(memberIdToUnfollow: number): Promise<void> {
     console.log('🔄 Unfollow API request:', { memberIdToUnfollow });
     try {
-      const result = await this.apiCall<any>('/api/members/follow', {
+      const result = await this.apiCall<any>(`/api/members/follow/${memberIdToUnfollow}`, {
         method: 'DELETE',
-        body: JSON.stringify({ memberIdToUnfollow }),
       });
       console.log('✅ Unfollow API response:', result);
     } catch (error) {

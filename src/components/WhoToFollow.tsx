@@ -6,6 +6,7 @@ import { getRecommendedMembers, followMember, unfollowMember, RecommendedMember 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFollowing } from '@/contexts/FollowingContext';
 import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
+import ErrorModal from './ErrorModal';
 import styles from './WhoToFollow.module.css';
 
 interface WhoToFollowProps {
@@ -19,6 +20,7 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
   const [members, setMembers] = useState<RecommendedMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorModalMessage, setErrorModalMessage] = useState<string | null>(null);
   const [followingMembers, setFollowingMembers] = useState<Set<string>>(new Set());
   const [loadingFollowActions, setLoadingFollowActions] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(0);
@@ -178,17 +180,22 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
         await followMember(memberIdNumber);
         console.log('✅ Successfully followed member:', memberIdNumber);
         refreshFollowing();
+
+        // Remove from "Who to follow" list after 1 second
+        setTimeout(() => {
+          setMembers(prev => prev.filter(m => m.id !== memberId));
+        }, 1000);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Follow/unfollow failed:', error);
       // Revert optimistic update on error
       setFollowingMembers(followingMembers);
 
-      // Show error message
-      setError(isCurrentlyFollowing ? '언팔로우에 실패했습니다.' : '팔로우에 실패했습니다.');
+      // Show error message from API or default message
+      const errorMessage = error.message || (isCurrentlyFollowing ? '언팔로우에 실패했습니다.' : '팔로우에 실패했습니다.');
 
-      // Clear error after 3 seconds
-      setTimeout(() => setError(null), 3000);
+      // Show custom modal popup
+      setErrorModalMessage(errorMessage);
     } finally {
       // Remove loading state
       const updatedLoadingState = new Set(loadingFollowActions);
@@ -294,6 +301,12 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
             Show more
           </button>
         </div>
+      )}
+      {errorModalMessage && (
+        <ErrorModal
+          message={errorModalMessage}
+          onClose={() => setErrorModalMessage(null)}
+        />
       )}
     </div>
   );

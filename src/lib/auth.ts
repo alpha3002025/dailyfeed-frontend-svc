@@ -756,6 +756,33 @@ class AuthService {
     }
   }
 
+  async deletePost(postId: number): Promise<void> {
+    console.log('🗑️ Deleting post:', postId);
+    try {
+      const response = await fetch(`http://localhost:8081/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Post deletion failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to delete post: ${response.status}`);
+      }
+
+      console.log('✅ Post deleted successfully');
+    } catch (error) {
+      console.error('❌ Post deletion error:', error);
+      throw error;
+    }
+  }
+
   // Get user's posts
   async getUserPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     console.log('📖 Fetching user posts...');
@@ -1640,6 +1667,8 @@ export const createPost = (content: string) =>
   authService.createPost(content);
 export const updatePost = (postId: number, content: string) =>
   authService.updatePost(postId, content);
+export const deletePost = (postId: number) =>
+  authService.deletePost(postId);
 export const getUserPosts = (page?: number, size?: number) =>
   authService.getUserPosts(page, size);
 export const getPostDetail = (postId: number) =>

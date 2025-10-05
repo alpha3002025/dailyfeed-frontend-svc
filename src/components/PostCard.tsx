@@ -12,12 +12,14 @@ interface PostCardProps {
   onLike?: (postId: number) => void;
   onComment?: (postId: number) => void;
   onEdit?: (postId: number) => void;
+  onDelete?: (postId: number) => void;
   isLiking?: boolean;
   showEditButton?: boolean;
+  showDeleteButton?: boolean;
   className?: string;
 }
 
-export default function PostCard({ post, onLike, onComment, onEdit, isLiking, showEditButton = false, className }: PostCardProps) {
+export default function PostCard({ post, onLike, onComment, onEdit, onDelete, isLiking, showEditButton = false, showDeleteButton = false, className }: PostCardProps) {
   const router = useRouter();
   const urls = extractUrls(post.content);
   const firstUrl = urls.length > 0 ? urls[0] : null;
@@ -76,17 +78,30 @@ export default function PostCard({ post, onLike, onComment, onEdit, isLiking, sh
           <div className={styles.postTime}>
             {formatDate(post.createdAt)}
           </div>
-          {showEditButton && onEdit && (
-            <button
-              className={styles.editButton}
-              onClick={() => onEdit(post.id)}
-              title="게시글 수정"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </button>
-          )}
+          <div className={styles.actionButtons}>
+            {showEditButton && onEdit && (
+              <button
+                className={styles.editButton}
+                onClick={() => onEdit(post.id)}
+                title="게시글 수정"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+            )}
+            {showDeleteButton && onDelete && (
+              <button
+                className={styles.deleteButton}
+                onClick={() => onDelete(post.id)}
+                title="게시글 삭제"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

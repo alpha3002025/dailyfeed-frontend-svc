@@ -8,10 +8,12 @@ import Following from '@/components/Following';
 import ProfileSection from '@/components/ProfileSection';
 import PostCard from '@/components/PostCard';
 import PostEditModal from '@/components/PostEditModal';
+import ConfirmModal from '@/components/ConfirmModal';
 import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
 import {
   createPost,
   updatePost,
+  deletePost,
   getUserPosts,
   likePost,
   unlikePost,
@@ -80,6 +82,9 @@ export default function FeedPage() {
 
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const [deletingPostId, setDeletingPostId] = useState<number | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const [searchKeyword, setSearchKeyword] = useState('');
 
@@ -319,6 +324,34 @@ export default function FeedPage() {
       setEditingPost(post);
       setIsEditModalOpen(true);
     }
+  };
+
+  const handleDeletePost = (postId: number) => {
+    setDeletingPostId(postId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deletingPostId === null) return;
+
+    try {
+      await deletePost(deletingPostId);
+
+      // Remove post from local state
+      setMyPosts(posts => posts.filter(p => p.id !== deletingPostId));
+
+      // Close modal and reset state
+      setIsDeleteModalOpen(false);
+      setDeletingPostId(null);
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+      alert('게시글 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setDeletingPostId(null);
   };
 
   const handleSaveEdit = async (postId: number, content: string) => {
@@ -1260,8 +1293,10 @@ export default function FeedPage() {
                   onLike={(postId) => handleLikeToggle(null as any, post, 'myPosts')}
                   onComment={(postId) => router.push(`/post/${postId}`)}
                   onEdit={handleEditPost}
+                  onDelete={handleDeletePost}
                   isLiking={likingPostIds.has(post.id)}
                   showEditButton={true}
+                  showDeleteButton={true}
                 />
               ))}
             </div>
@@ -1324,6 +1359,18 @@ export default function FeedPage() {
         onClose={handleCloseEditModal}
         onSave={handleSaveEdit}
       />
+
+      {isDeleteModalOpen && (
+        <ConfirmModal
+          title="게시글 삭제"
+          message="이 게시글을 삭제하시겠습니까? 삭제된 게시글은 복구할 수 없습니다."
+          confirmText="삭제"
+          cancelText="취소"
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          isDestructive={true}
+        />
+      )}
     </div>
   );
 }

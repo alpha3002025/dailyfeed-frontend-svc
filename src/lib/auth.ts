@@ -1,4 +1,11 @@
-const API_BASE_URL = 'http://localhost:8084';
+import {
+  MEMBER_SERVICE_URL,
+  CONTENT_SERVICE_URL,
+  TIMELINE_SERVICE_URL,
+  IMAGE_SERVICE_URL,
+  SEARCH_SERVICE_URL
+} from '@/config/env';
+
 const TOKEN_KEY = 'dailyfeed_token';
 
 export interface LoginCredentials {
@@ -213,7 +220,7 @@ class AuthService {
 
   async login(credentials: LoginCredentials): Promise<{ user: AuthUser; token: string }> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/authentication/login`, {
+      const response = await fetch(`${MEMBER_SERVICE_URL}/api/authentication/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -406,7 +413,7 @@ class AuthService {
     try {
       // Call server logout API if token exists
       if (this.token) {
-        const response = await fetch(`${API_BASE_URL}/api/authentication/logout`, {
+        const response = await fetch(`${MEMBER_SERVICE_URL}/api/authentication/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${this.token}`,
@@ -494,7 +501,7 @@ class AuthService {
   }
 
   async authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const requestUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+    const requestUrl = url.startsWith('http') ? url : `${MEMBER_SERVICE_URL}${url}`;
     const headers = {
       ...this.getAuthHeaders(),
       ...options.headers,
@@ -538,7 +545,7 @@ class AuthService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+    const url = endpoint.startsWith('http') ? endpoint : `${MEMBER_SERVICE_URL}${endpoint}`;
     const response = await this.authenticatedFetch(url, options);
 
     if (!response.ok) {
@@ -696,7 +703,7 @@ class AuthService {
   async createPost(content: string): Promise<void> {
     console.log('📝 Creating new post:', content);
     try {
-      const response = await fetch('http://localhost:8081/api/posts', {
+      const response = await fetch(`${CONTENT_SERVICE_URL}/api/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -728,7 +735,7 @@ class AuthService {
   async updatePost(postId: number, content: string): Promise<void> {
     console.log('✏️ Updating post:', postId, content);
     try {
-      const response = await fetch(`http://localhost:8081/api/posts/${postId}`, {
+      const response = await fetch(`${CONTENT_SERVICE_URL}/api/posts/${postId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -759,7 +766,7 @@ class AuthService {
   async deletePost(postId: number): Promise<void> {
     console.log('🗑️ Deleting post:', postId);
     try {
-      const response = await fetch(`http://localhost:8081/api/posts/${postId}`, {
+      const response = await fetch(`${CONTENT_SERVICE_URL}/api/posts/${postId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -787,7 +794,7 @@ class AuthService {
   async getUserPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     console.log('📖 Fetching user posts...');
     try {
-      const response = await fetch(`http://localhost:8082/api/timeline/posts?page=${page}&size=${size}`, {
+      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -853,7 +860,7 @@ class AuthService {
   async getPostDetail(postId: number): Promise<PostDetail> {
     console.log('📄 Fetching post detail for ID:', postId);
     try {
-      const response = await fetch(`http://localhost:8082/api/timeline/posts/${postId}`, {
+      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts/${postId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -913,7 +920,7 @@ class AuthService {
   async getPostComments(postId: number): Promise<Comment[]> {
     console.log('💬 Fetching comments for post ID:', postId);
     try {
-      const response = await fetch(`http://localhost:8082/api/timeline/posts/${postId}/comments`, {
+      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts/${postId}/comments`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -967,7 +974,7 @@ class AuthService {
   async createComment(postId: number, content: string, parentId?: number | null): Promise<Comment> {
     console.log('💬 Creating comment for post ID:', postId);
     try {
-      const response = await fetch('http://localhost:8081/api/comments', {
+      const response = await fetch(`${CONTENT_SERVICE_URL}/api/comments`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1014,7 +1021,7 @@ class AuthService {
   async updateComment(commentId: number, content: string): Promise<Comment> {
     console.log('✏️ Updating comment ID:', commentId);
     try {
-      const response = await fetch(`http://localhost:8081/api/comments/${commentId}`, {
+      const response = await fetch(`${CONTENT_SERVICE_URL}/api/comments/${commentId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1057,7 +1064,7 @@ class AuthService {
   async deleteComment(commentId: number): Promise<void> {
     console.log('🗑️ Deleting comment ID:', commentId);
     try {
-      const response = await fetch(`http://localhost:8081/api/comments/${commentId}`, {
+      const response = await fetch(`${CONTENT_SERVICE_URL}/api/comments/${commentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1086,7 +1093,7 @@ class AuthService {
   async likePost(postId: number): Promise<number | void> {
     console.log('❤️ Liking post ID:', postId);
     try {
-      const response = await fetch(`http://localhost:8081/api/posts/${postId}/like`, {
+      const response = await fetch(`${CONTENT_SERVICE_URL}/api/posts/${postId}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1120,7 +1127,7 @@ class AuthService {
   async unlikePost(postId: number): Promise<number | void> {
     console.log('💔 Unliking post ID:', postId);
     try {
-      const response = await fetch(`http://localhost:8081/api/posts/${postId}/like`, {
+      const response = await fetch(`${CONTENT_SERVICE_URL}/api/posts/${postId}/like`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1153,7 +1160,7 @@ class AuthService {
   // Get most popular posts
   async getMostPopularPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
-      const response = await fetch(`http://localhost:8082/api/timeline/posts/most-popular?page=${page}&size=${size}`, {
+      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts/most-popular?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1217,7 +1224,7 @@ class AuthService {
   // Get most commented posts
   async getMostCommentedPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
-      const response = await fetch(`http://localhost:8082/api/timeline/posts/most-commented?page=${page}&size=${size}`, {
+      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts/most-commented?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1289,7 +1296,7 @@ class AuthService {
       console.log('📤 File details:', { name: file.name, size: file.size, type: file.type });
       console.log('📤 Token present:', !!this.token);
 
-      const response = await fetch(`http://localhost:8085/api/images/upload/profile`, {
+      const response = await fetch(`${IMAGE_SERVICE_URL}/api/images/upload/profile`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1324,8 +1331,8 @@ class AuthService {
       console.log('📌 Extracted viewId:', viewId);
 
       // Construct the image URL using viewId
-      const imageUrl = `http://localhost:8085/api/images/view/${viewId}`;
-      const thumbnailUrl = `http://localhost:8085/api/images/view/${viewId}?thumbnail=true`;
+      const imageUrl = `${IMAGE_SERVICE_URL}/api/images/view/${viewId}`;
+      const thumbnailUrl = `${IMAGE_SERVICE_URL}/api/images/view/${viewId}?thumbnail=true`;
 
       console.log('📸 Image URLs:', { imageUrl, thumbnailUrl });
 
@@ -1343,7 +1350,7 @@ class AuthService {
 
   // Get image URL
   getImageUrl(imageId: string, thumbnail: boolean = false): string {
-    const baseUrl = `http://localhost:8085/api/images/view/${imageId}`;
+    const baseUrl = `${IMAGE_SERVICE_URL}/api/images/view/${imageId}`;
     return thumbnail ? `${baseUrl}?thumbnail=true` : baseUrl;
   }
 
@@ -1379,7 +1386,7 @@ class AuthService {
   async getMyProfile(): Promise<AuthUser> {
     console.log('👤 Fetching my profile...');
     try {
-      const response = await this.authenticatedFetch('http://localhost:8084/api/members/profile');
+      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/api/members/profile`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch profile: ${response.status}`);
@@ -1417,7 +1424,7 @@ class AuthService {
   async getMemberProfile(handle: string): Promise<AuthUser> {
     console.log('👤 Fetching member profile by handle:', handle);
     try {
-      const response = await this.authenticatedFetch(`http://localhost:8084/api/members/profile/@${handle}`);
+      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/api/members/profile/@${handle}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch member profile: ${response.status}`);
@@ -1455,7 +1462,7 @@ class AuthService {
   async updateProfile(profileData: ProfileData): Promise<void> {
     console.log('✏️ Updating profile...', profileData);
     try {
-      const response = await this.authenticatedFetch('http://localhost:8084/api/members/profile', {
+      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/api/members/profile`, {
         method: 'PUT',
         body: JSON.stringify(profileData),
       });
@@ -1475,7 +1482,7 @@ class AuthService {
   async updateHandle(handleData: HandleUpdateData): Promise<void> {
     console.log('✏️ Updating handle...', handleData);
     try {
-      const response = await this.authenticatedFetch('http://localhost:8084/api/members/profile/handle', {
+      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/api/members/profile/handle`, {
         method: 'PUT',
         body: JSON.stringify(handleData),
       });
@@ -1495,7 +1502,7 @@ class AuthService {
   async deleteImages(imageUrls: string[]): Promise<void> {
     console.log('🗑️ Deleting images...', imageUrls);
     try {
-      const response = await this.authenticatedFetch('http://localhost:8085/api/images/view/command/delete/in', {
+      const response = await this.authenticatedFetch(`${IMAGE_SERVICE_URL}/api/images/view/command/delete/in`, {
         method: 'POST',
         body: JSON.stringify({ imageUrls }),
       });
@@ -1516,7 +1523,7 @@ class AuthService {
   async searchPosts(keyword: string, page: number = 0, size: number = 20): Promise<Post[]> {
     console.log('🔍 Searching posts with keyword:', keyword);
     try {
-      const response = await fetch(`http://localhost:8083/api/search/posts/?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`, {
+      const response = await fetch(`${SEARCH_SERVICE_URL}/api/search/posts/?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1572,7 +1579,7 @@ class AuthService {
   // Get following members' timeline posts
   async getFollowingTimelinePosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
-      const response = await fetch(`http://localhost:8082/api/timeline/posts/followings?page=${page}&size=${size}`, {
+      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts/followings?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,

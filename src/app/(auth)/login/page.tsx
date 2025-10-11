@@ -89,7 +89,7 @@ export default function Page() {
         setSignupError('');
 
         try {
-            const response = await fetch('http://localhost:8084/api/authentication/signup', {
+            const response = await fetch('/api/proxy/authentication/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -220,7 +220,7 @@ class AuthService {
 
   async login(credentials: LoginCredentials): Promise<{ user: AuthUser; token: string }> {
     try {
-      const response = await fetch(`${MEMBER_SERVICE_URL}/api/authentication/login`, {
+      const response = await fetch('/api/proxy/authentication/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -413,7 +413,7 @@ class AuthService {
     try {
       // Call server logout API if token exists
       if (this.token) {
-        const response = await fetch(`${MEMBER_SERVICE_URL}/api/authentication/logout`, {
+        const response = await fetch('/api/proxy/authentication/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${this.token}`,
@@ -501,7 +501,26 @@ class AuthService {
   }
 
   async authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const requestUrl = url.startsWith('http') ? url : `${MEMBER_SERVICE_URL}${url}`;
+    // Convert backend URLs to proxy URLs
+    let requestUrl = url;
+
+    // If URL starts with http, extract the path for proxy
+    if (url.startsWith('http')) {
+      try {
+        const urlObj = new URL(url);
+        requestUrl = `/api/proxy${urlObj.pathname}${urlObj.search}`;
+      } catch (e) {
+        console.error('Failed to parse URL:', url);
+        requestUrl = url;
+      }
+    } else if (url.startsWith('/api/')) {
+      // Already an API path, convert to proxy path
+      requestUrl = url.replace('/api/', '/api/proxy/');
+    } else {
+      // Relative path, add proxy prefix
+      requestUrl = `/api/proxy${url}`;
+    }
+
     const headers = {
       ...this.getAuthHeaders(),
       ...options.headers,
@@ -703,7 +722,7 @@ class AuthService {
   async createPost(content: string): Promise<void> {
     console.log('📝 Creating new post:', content);
     try {
-      const response = await fetch(`${CONTENT_SERVICE_URL}/api/posts`, {
+      const response = await fetch('/api/proxy/posts', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -735,7 +754,7 @@ class AuthService {
   async updatePost(postId: number, content: string): Promise<void> {
     console.log('✏️ Updating post:', postId, content);
     try {
-      const response = await fetch(`${CONTENT_SERVICE_URL}/api/posts/${postId}`, {
+      const response = await fetch(`/api/proxy/posts/${postId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -766,7 +785,7 @@ class AuthService {
   async deletePost(postId: number): Promise<void> {
     console.log('🗑️ Deleting post:', postId);
     try {
-      const response = await fetch(`${CONTENT_SERVICE_URL}/api/posts/${postId}`, {
+      const response = await fetch(`/api/proxy/posts/${postId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -794,7 +813,7 @@ class AuthService {
   async getUserPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     console.log('📖 Fetching user posts...');
     try {
-      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts?page=${page}&size=${size}`, {
+      const response = await fetch(`/api/proxy/timeline/posts?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -860,7 +879,7 @@ class AuthService {
   async getPostDetail(postId: number): Promise<PostDetail> {
     console.log('📄 Fetching post detail for ID:', postId);
     try {
-      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts/${postId}`, {
+      const response = await fetch(`/api/proxy/timeline/posts/${postId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -920,7 +939,7 @@ class AuthService {
   async getPostComments(postId: number): Promise<Comment[]> {
     console.log('💬 Fetching comments for post ID:', postId);
     try {
-      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts/${postId}/comments`, {
+      const response = await fetch(`/api/proxy/timeline/posts/${postId}/comments`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -974,7 +993,7 @@ class AuthService {
   async createComment(postId: number, content: string, parentId?: number | null): Promise<Comment> {
     console.log('💬 Creating comment for post ID:', postId);
     try {
-      const response = await fetch(`${CONTENT_SERVICE_URL}/api/comments`, {
+      const response = await fetch('/api/proxy/comments', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1021,7 +1040,7 @@ class AuthService {
   async updateComment(commentId: number, content: string): Promise<Comment> {
     console.log('✏️ Updating comment ID:', commentId);
     try {
-      const response = await fetch(`${CONTENT_SERVICE_URL}/api/comments/${commentId}`, {
+      const response = await fetch(`/api/proxy/comments/${commentId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1064,7 +1083,7 @@ class AuthService {
   async deleteComment(commentId: number): Promise<void> {
     console.log('🗑️ Deleting comment ID:', commentId);
     try {
-      const response = await fetch(`${CONTENT_SERVICE_URL}/api/comments/${commentId}`, {
+      const response = await fetch(`/api/proxy/comments/${commentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1093,7 +1112,7 @@ class AuthService {
   async likePost(postId: number): Promise<number | void> {
     console.log('❤️ Liking post ID:', postId);
     try {
-      const response = await fetch(`${CONTENT_SERVICE_URL}/api/posts/${postId}/like`, {
+      const response = await fetch(`/api/proxy/posts/${postId}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1127,7 +1146,7 @@ class AuthService {
   async unlikePost(postId: number): Promise<number | void> {
     console.log('💔 Unliking post ID:', postId);
     try {
-      const response = await fetch(`${CONTENT_SERVICE_URL}/api/posts/${postId}/like`, {
+      const response = await fetch(`/api/proxy/posts/${postId}/like`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1160,7 +1179,7 @@ class AuthService {
   // Get most popular posts
   async getMostPopularPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
-      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts/most-popular?page=${page}&size=${size}`, {
+      const response = await fetch(`/api/proxy/timeline/posts/most-popular?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1224,7 +1243,7 @@ class AuthService {
   // Get most commented posts
   async getMostCommentedPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
-      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts/most-commented?page=${page}&size=${size}`, {
+      const response = await fetch(`/api/proxy/timeline/posts/most-commented?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1296,7 +1315,7 @@ class AuthService {
       console.log('📤 File details:', { name: file.name, size: file.size, type: file.type });
       console.log('📤 Token present:', !!this.token);
 
-      const response = await fetch(`${IMAGE_SERVICE_URL}/api/images/upload/profile`, {
+      const response = await fetch('/api/proxy/images/upload/profile', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1330,9 +1349,9 @@ class AuthService {
 
       console.log('📌 Extracted viewId:', viewId);
 
-      // Construct the image URL using viewId
-      const imageUrl = `${IMAGE_SERVICE_URL}/api/images/view/${viewId}`;
-      const thumbnailUrl = `${IMAGE_SERVICE_URL}/api/images/view/${viewId}?thumbnail=true`;
+      // Construct the image URL using viewId through proxy
+      const imageUrl = `/api/proxy/images/view/${viewId}`;
+      const thumbnailUrl = `/api/proxy/images/view/${viewId}?thumbnail=true`;
 
       console.log('📸 Image URLs:', { imageUrl, thumbnailUrl });
 
@@ -1350,7 +1369,7 @@ class AuthService {
 
   // Get image URL
   getImageUrl(imageId: string, thumbnail: boolean = false): string {
-    const baseUrl = `${IMAGE_SERVICE_URL}/api/images/view/${imageId}`;
+    const baseUrl = `/api/proxy/images/view/${imageId}`;
     return thumbnail ? `${baseUrl}?thumbnail=true` : baseUrl;
   }
 
@@ -1523,7 +1542,7 @@ class AuthService {
   async searchPosts(keyword: string, page: number = 0, size: number = 20): Promise<Post[]> {
     console.log('🔍 Searching posts with keyword:', keyword);
     try {
-      const response = await fetch(`${SEARCH_SERVICE_URL}/api/search/posts/?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`, {
+      const response = await fetch(`/api/proxy/search/posts/?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,
@@ -1579,7 +1598,7 @@ class AuthService {
   // Get following members' timeline posts
   async getFollowingTimelinePosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
-      const response = await fetch(`${TIMELINE_SERVICE_URL}/api/timeline/posts/followings?page=${page}&size=${size}`, {
+      const response = await fetch(`/api/proxy/timeline/posts/followings?page=${page}&size=${size}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${this.token}`,

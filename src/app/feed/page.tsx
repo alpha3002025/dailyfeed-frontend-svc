@@ -9,7 +9,7 @@ import ProfileSection from '@/components/ProfileSection';
 import PostCard from '@/components/PostCard';
 import PostEditModal from '@/components/PostEditModal';
 import ConfirmModal from '@/components/ConfirmModal';
-import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
+import { hasValidAvatar, getAvatarInitial, convertImageUrl } from '@/utils/avatarUtils';
 import {
   createPost,
   updatePost,
@@ -835,7 +835,7 @@ export default function FeedPage() {
             <div className={styles.userInfo}>
               <div className={styles.userAvatar}>
                 {hasValidAvatar(user?.avatarUrl) ? (
-                  <img src={user?.avatarUrl || ''} alt="Profile" />
+                  <img src={convertImageUrl(user?.avatarUrl) || ''} alt="Profile" />
                 ) : (
                   <span>{getAvatarInitial(user?.displayName, user?.memberName, user?.handle)}</span>
                 )}
@@ -870,7 +870,7 @@ export default function FeedPage() {
           <div className={styles.composeContent}>
             <div className={styles.avatar}>
               {hasValidAvatar(user?.avatarUrl) ? (
-                <img src={user?.avatarUrl || ''} alt="Profile" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
+                <img src={convertImageUrl(user?.avatarUrl) || ''} alt="Profile" style={{width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover'}} />
               ) : (
                 <span>{getAvatarInitial(user?.displayName, user?.memberName, user?.handle)}</span>
               )}

@@ -11,7 +11,7 @@ import {
   followMember,
   type RecommendedMember
 } from '@/lib/auth';
-import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
+import { hasValidAvatar, getAvatarInitial, convertImageUrl } from '@/utils/avatarUtils';
 import styles from './discover.module.css';
 
 export default function DiscoverPage() {
@@ -257,8 +257,8 @@ export default function DiscoverPage() {
                       className={styles.memberAvatar}
                       onClick={() => handleMemberClick(member.handle)}
                     >
-                      {hasValidAvatar(member.avatarUrl) ? (
-                        <img src={member.avatarUrl} alt={member.displayName} />
+                      {hasValidAvatar(member.avatarUrl) && convertImageUrl(member.avatarUrl) ? (
+                        <img src={convertImageUrl(member.avatarUrl)!} alt={member.displayName} />
                       ) : (
                         <span>{getAvatarInitial(member.displayName, member.memberName, member.handle)}</span>
                       )}

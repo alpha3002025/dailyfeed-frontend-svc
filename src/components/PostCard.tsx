@@ -3,7 +3,7 @@
 import { Post } from '@/lib/auth';
 import { extractUrls } from '@/utils/linkPreview';
 import LinkPreview from './LinkPreview';
-import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
+import { hasValidAvatar, getAvatarInitial, convertImageUrl } from '@/utils/avatarUtils';
 import { useRouter } from 'next/navigation';
 import styles from './PostCard.module.css';
 
@@ -58,8 +58,8 @@ export default function PostCard({ post, onLike, onComment, onEdit, onDelete, is
     >
       <div className={styles.postHeader}>
         <div className={styles.authorAvatar}>
-          {hasValidAvatar(post.memberAvatarUrl) ? (
-            <img src={post.memberAvatarUrl} alt="Profile" className={styles.avatarImage} />
+          {hasValidAvatar(post.memberAvatarUrl) && convertImageUrl(post.memberAvatarUrl) ? (
+            <img src={convertImageUrl(post.memberAvatarUrl)!} alt="Profile" className={styles.avatarImage} />
           ) : (
             <div className={styles.avatarPlaceholder}>
               <span>{getAvatarInitial(post.memberDisplayName, post.memberName, post.memberHandle)}</span>

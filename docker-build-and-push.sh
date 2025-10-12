@@ -7,7 +7,7 @@ set -e
 
 # 변수 설정
 IMAGE_NAME="alpha300uk/dailyfeed-frontend"
-IMAGE_TAG="v0.0.4"
+IMAGE_TAG="v0.0.10"
 FULL_IMAGE_NAME="${IMAGE_NAME}:${IMAGE_TAG}"
 
 echo "🚀 Docker 이미지 빌드 시작..."

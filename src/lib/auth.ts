@@ -513,8 +513,11 @@ class AuthService {
         console.error('Failed to parse URL:', url);
         requestUrl = url;
       }
+    } else if (url.startsWith('/api/proxy/')) {
+      // Already proxied, use as-is
+      requestUrl = url;
     } else if (url.startsWith('/api/')) {
-      // Already an API path, convert to proxy path
+      // API path without proxy, convert to proxy path
       requestUrl = url.replace('/api/', '/api/proxy/');
     } else {
       // Relative path, add proxy prefix
@@ -564,7 +567,9 @@ class AuthService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = endpoint.startsWith('http') ? endpoint : `${MEMBER_SERVICE_URL}${endpoint}`;
+    // Remove leading /api/ if present since MEMBER_SERVICE_URL already includes /api/proxy
+    const cleanEndpoint = endpoint.startsWith('/api/') ? endpoint.substring(4) : endpoint;
+    const url = endpoint.startsWith('http') ? endpoint : `${MEMBER_SERVICE_URL}${cleanEndpoint}`;
     const response = await this.authenticatedFetch(url, options);
 
     if (!response.ok) {

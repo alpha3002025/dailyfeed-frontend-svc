@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
+import { hasValidAvatar, getAvatarInitial, convertImageUrl } from '@/utils/avatarUtils';
 import styles from './CommentForm.module.css';
 
 interface CommentFormProps {
@@ -46,8 +46,8 @@ export default function CommentForm({
     <form onSubmit={handleSubmit} className={styles.form}>
       <div className={styles.inputContainer}>
         <div className={styles.avatar}>
-          {hasValidAvatar(user.avatarUrl) ? (
-            <img src={user.avatarUrl || ''} alt={user.displayName || user.memberName} />
+          {hasValidAvatar(user.avatarUrl) && convertImageUrl(user.avatarUrl) ? (
+            <img src={convertImageUrl(user.avatarUrl)!} alt={user.displayName || user.memberName} />
           ) : (
             <span>{getAvatarInitial(user.displayName, user.memberName, user.handle)}</span>
           )}

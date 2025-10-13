@@ -148,11 +148,20 @@ async function proxyRequest(
     if (responseContentType.includes('image/') ||
         responseContentType.includes('application/octet-stream')) {
       const blob = await response.blob();
+
+      // Apply aggressive caching for images
+      // public: can be cached by any cache (browser, CDN, etc.)
+      // max-age=86400: browser cache for 24 hours
+      // s-maxage=604800: CDN/shared cache for 7 days
+      // stale-while-revalidate=2592000: serve stale content for 30 days while revalidating
+      const cacheControl = response.headers.get('Cache-Control') ||
+        'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000, immutable';
+
       return new NextResponse(blob, {
         status: response.status,
         headers: {
           'Content-Type': responseContentType,
-          'Cache-Control': response.headers.get('Cache-Control') || 'no-cache',
+          'Cache-Control': cacheControl,
         },
       });
     }

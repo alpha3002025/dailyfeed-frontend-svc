@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { getRecommendedMembers, followMember, unfollowMember, RecommendedMember } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFollowing } from '@/contexts/FollowingContext';
@@ -249,7 +250,14 @@ export default function WhoToFollow({ className }: WhoToFollowProps) {
             style={{ cursor: 'pointer' }}
           >
             {hasValidAvatar(member.avatarUrl) && convertImageUrl(member.avatarUrl) ? (
-              <img src={convertImageUrl(member.avatarUrl)!} alt={member.displayName} />
+              <Image
+                src={convertImageUrl(member.avatarUrl)!}
+                alt={member.displayName}
+                width={48}
+                height={48}
+                style={{ borderRadius: '50%', objectFit: 'cover' }}
+                unoptimized={convertImageUrl(member.avatarUrl)!.startsWith('/api/proxy/')}
+              />
             ) : (
               <span>{getAvatarInitial(member.displayName, member.memberName, member.handle)}</span>
             )}

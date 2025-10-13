@@ -8,7 +8,26 @@ const nextConfig: NextConfig = {
     }
   },
   images: {
-    domains: ["shopping-phinf.pstatic.net"]
+    // Allow external domains for book cover images
+    domains: ["shopping-phinf.pstatic.net"],
+    // For internal images served through API proxy
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'dailyfeed.local',
+        port: '8889',
+        pathname: '/api/images/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        pathname: '/api/**',
+      },
+    ],
+    // Optimize images with these formats
+    formats: ['image/avif', 'image/webp'],
+    // Cache optimized images for 60 days
+    minimumCacheTTL: 5184000,
   },
   eslint: {
     ignoreDuringBuilds: true

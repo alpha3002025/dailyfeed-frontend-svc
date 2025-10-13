@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import type { AuthUser, ProfileData, HandleUpdateData } from '@/lib/auth';
-import { hasValidAvatar, getAvatarInitial } from '@/utils/avatarUtils';
+import { hasValidAvatar, getAvatarInitial, convertImageUrl } from '@/utils/avatarUtils';
 
 interface ProfileSectionProps {
   profile: AuthUser | null;
@@ -127,20 +128,29 @@ export default function ProfileSection({
               width: '100px',
               height: '100px',
               borderRadius: '50%',
-              backgroundImage: hasValidAvatar(profileFormData.avatarUrl) ? `url(${profileFormData.avatarUrl})` : undefined,
               backgroundColor: hasValidAvatar(profileFormData.avatarUrl) ? 'transparent' : '#1d9bf0',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '2.5rem',
               color: 'white',
               fontWeight: 'bold',
-              border: '3px solid #f0f0f0'
+              border: '3px solid #f0f0f0',
+              overflow: 'hidden',
+              position: 'relative'
             }}>
-              {!hasValidAvatar(profileFormData.avatarUrl) && getAvatarInitial(profile?.displayName, profile?.memberName, profile?.handle)}
+              {hasValidAvatar(profileFormData.avatarUrl) && convertImageUrl(profileFormData.avatarUrl) ? (
+                <Image
+                  src={convertImageUrl(profileFormData.avatarUrl)!}
+                  alt={profile?.displayName || 'Profile'}
+                  width={100}
+                  height={100}
+                  style={{ borderRadius: '50%', objectFit: 'cover' }}
+                  unoptimized={convertImageUrl(profileFormData.avatarUrl)!.startsWith('/api/proxy/')}
+                />
+              ) : (
+                getAvatarInitial(profile?.displayName, profile?.memberName, profile?.handle)
+              )}
             </div>
             {isEditingProfile && (
               <button

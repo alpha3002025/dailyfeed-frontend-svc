@@ -508,7 +508,11 @@ class AuthService {
     if (url.startsWith('http')) {
       try {
         const urlObj = new URL(url);
-        requestUrl = `/api/proxy${urlObj.pathname}${urlObj.search}`;
+        // Remove /api prefix if present since proxy will add it back
+        const pathname = urlObj.pathname.startsWith('/api/')
+          ? urlObj.pathname.substring(4)  // Remove '/api' prefix
+          : urlObj.pathname;
+        requestUrl = `/api/proxy${pathname}${urlObj.search}`;
       } catch (e) {
         console.error('Failed to parse URL:', url);
         requestUrl = url;
@@ -598,7 +602,7 @@ class AuthService {
   // Fetch recommended members for "Who to follow" section
   async getRecommendedMembers(page: number = 0, size: number = 5): Promise<RecommendedMembersResponse> {
     const apiResponse = await this.apiCall<RecommendedMembersApiResponse>(
-      `/api/members/follow/recommend/newbie?page=${page}&size=${size}`
+      `/members/follow/recommend/newbie?page=${page}&size=${size}`
     );
 
     const responseData = apiResponse.data;
@@ -621,7 +625,7 @@ class AuthService {
     console.log('📤 Sending follow request for memberId:', memberIdToFollow);
 
     try {
-      const result = await this.apiCall<any>(`/api/members/follow/${memberIdToFollow}`, {
+      const result = await this.apiCall<any>(`/members/follow/${memberIdToFollow}`, {
         method: 'POST',
       });
       console.log('✅ Follow API response:', result);
@@ -651,7 +655,7 @@ class AuthService {
   async unfollowMember(memberIdToUnfollow: number): Promise<void> {
     console.log('🔄 Unfollow API request:', { memberIdToUnfollow });
     try {
-      const result = await this.apiCall<any>(`/api/members/follow/${memberIdToUnfollow}`, {
+      const result = await this.apiCall<any>(`/members/follow/${memberIdToUnfollow}`, {
         method: 'DELETE',
       });
       console.log('✅ Unfollow API response:', result);
@@ -664,7 +668,7 @@ class AuthService {
   // Get followers and following lists
   async getFollowersFollowings(page: number = 0, size: number = 10): Promise<{ followers: FollowingMember[], followings: FollowingMember[], followersTotal?: number, followingsTotal?: number }> {
     console.log('🔄 Fetching followers-followings...');
-    const apiResponse = await this.apiCall<FollowersFollowingsResponse>(`/api/members/followers-followings?page=${page}&size=${size}`);
+    const apiResponse = await this.apiCall<FollowersFollowingsResponse>(`/members/followers-followings?page=${page}&size=${size}`);
     console.log('📦 Full API response:', apiResponse);
 
     const followersContent = apiResponse.data.followers.content.map(member => ({
@@ -690,7 +694,7 @@ class AuthService {
   // Get more followers
   async getMoreFollowers(page: number = 0, size: number = 10): Promise<{ followers: FollowingMember[], total?: number }> {
     console.log('🔄 Fetching more followers...');
-    const apiResponse = await this.apiCall<any>(`/api/members/followers/more?page=${page}&size=${size}`);
+    const apiResponse = await this.apiCall<any>(`/members/followers/more?page=${page}&size=${size}`);
     console.log('📦 More followers response:', apiResponse);
 
     const followersContent = (apiResponse.data?.content || apiResponse.content || []).map((member: any) => ({
@@ -708,7 +712,7 @@ class AuthService {
   // Get more followings
   async getMoreFollowings(page: number = 0, size: number = 10): Promise<{ followings: FollowingMember[], total?: number }> {
     console.log('🔄 Fetching more followings...');
-    const apiResponse = await this.apiCall<any>(`/api/members/followings/more?page=${page}&size=${size}`);
+    const apiResponse = await this.apiCall<any>(`/members/followings/more?page=${page}&size=${size}`);
     console.log('📦 More followings response:', apiResponse);
 
     const followingsContent = (apiResponse.data?.content || apiResponse.content || []).map((member: any) => ({
@@ -1410,7 +1414,7 @@ class AuthService {
   async getMyProfile(): Promise<AuthUser> {
     console.log('👤 Fetching my profile...');
     try {
-      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/api/members/profile`);
+      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/members/profile`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch profile: ${response.status}`);
@@ -1448,7 +1452,7 @@ class AuthService {
   async getMemberProfile(handle: string): Promise<AuthUser> {
     console.log('👤 Fetching member profile by handle:', handle);
     try {
-      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/api/members/profile/@${handle}`);
+      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/members/profile/@${handle}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch member profile: ${response.status}`);
@@ -1486,7 +1490,7 @@ class AuthService {
   async updateProfile(profileData: ProfileData): Promise<void> {
     console.log('✏️ Updating profile...', profileData);
     try {
-      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/api/members/profile`, {
+      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/members/profile`, {
         method: 'PUT',
         body: JSON.stringify(profileData),
       });
@@ -1506,7 +1510,7 @@ class AuthService {
   async updateHandle(handleData: HandleUpdateData): Promise<void> {
     console.log('✏️ Updating handle...', handleData);
     try {
-      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/api/members/profile/handle`, {
+      const response = await this.authenticatedFetch(`${MEMBER_SERVICE_URL}/members/profile/handle`, {
         method: 'PUT',
         body: JSON.stringify(handleData),
       });
@@ -1526,7 +1530,7 @@ class AuthService {
   async deleteImages(imageUrls: string[]): Promise<void> {
     console.log('🗑️ Deleting images...', imageUrls);
     try {
-      const response = await this.authenticatedFetch(`${IMAGE_SERVICE_URL}/api/images/view/command/delete/in`, {
+      const response = await this.authenticatedFetch(`${IMAGE_SERVICE_URL}/images/view/command/delete/in`, {
         method: 'POST',
         body: JSON.stringify({ imageUrls }),
       });

@@ -228,14 +228,16 @@ class AuthService {
         body: JSON.stringify(credentials),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || '로그인에 실패했습니다.');
-      }
-
-      // Get response body
+      // Get response body first (even if response.ok is false, we need to read the body)
       const responseData = await response.json();
       console.log('Login response:', responseData);
+
+      // Check for backend error indicators
+      if (!response.ok || responseData.resultCode === 'FAIL' || responseData.statusCode >= 400) {
+        const errorMessage = responseData.message || '로그인에 실패했습니다.';
+        console.error('❌ Login failed:', errorMessage);
+        throw new Error(errorMessage);
+      }
 
       // Try to extract JWT token from various possible locations
       let token = null;

@@ -1,6 +1,7 @@
 /**
  * Convert backend image URL to frontend-accessible URL
  * - http://dailyfeed.local:8889/* URLs: Use as-is (directly accessible)
+ * - http://localhost:* URLs: Convert to /api/proxy/images/view/xxx (local dev)
  * - http://dailyfeed-*-svc:* URLs: Convert to /api/proxy/images/view/xxx
  * - Other external URLs: Use as-is
  */
@@ -15,6 +16,15 @@ export function convertImageUrl(url: string | null | undefined): string | null {
   // If it's http://dailyfeed.local:8889, return as-is (directly accessible)
   if (url.startsWith('http://dailyfeed.local:8889')) {
     return url;
+  }
+
+  // Check if it's a localhost URL (local development)
+  // Pattern: http://localhost:8085/api/images/view/xxx
+  if (url.startsWith('http://localhost:')) {
+    const match = url.match(/\/api\/images\/view\/(.+)/);
+    if (match) {
+      return `/api/proxy/images/view/${match[1]}`;
+    }
   }
 
   // Check if it's an internal service URL (dailyfeed-*-svc)

@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(helm lint:*)",
+      "Bash(cat:*)",
+      "Bash(chmod:*)",
+      "Bash(./docker-build-and-push.sh:*)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(kubectl logs:*)",
+      "Bash(kubectl apply:*)",
+      "Bash(kubectl rollout restart:*)",
+      "Bash(kubectl rollout status:*)",
+      "Bash(curl -X POST \"http://dailyfeed.local/api/proxy/authentication/login\" -H \"Content-Type: application/json\" -d \"{\"\"email\"\":\"\"test@example.com\"\",\"\"password\"\":\"\"testpassword\"\"}\" -i)",
+      "Bash(kubectl get pods:*)",
+      "Bash(kubectl run:*)",
+      "Bash(kubectl wait:*)",
+      "Bash(curl -X POST \"http://dailyfeed.local/api/proxy/authentication/login\" -H \"Content-Type: application/json\" -d '{\"\"\"\"email\"\"\"\":\"\"\"\"test@example.com\"\"\"\",\"\"\"\"password\"\"\"\":\"\"\"\"testpassword\"\"\"\"}' -w \"\\n\\nHTTP Status: %{http_code}\\n\")",
+      "Bash(kubectl get deployment:*)",
+      "Bash(kubectl set image:*)",
+      "Bash(kubectl exec:*)",
+      "Bash(awk:*)",
+      "Bash(xargs -I {} kubectl exec -n dailyfeed {} -- env)",
+      "Bash(kubectl describe:*)",
+      "Bash(curl:*)",
+      "Read(//Users/alpha300uk/workspace/alpha300uk/0.toy-project/dailyfeed/project/dailyfeed-installer/dailyfeed-infrastructure/istio/**)",
+      "Bash(kubectl get:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

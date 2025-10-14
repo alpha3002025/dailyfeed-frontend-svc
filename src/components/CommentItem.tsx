@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { hasValidAvatar, getAvatarInitial, convertImageUrl } from '@/utils/avatarUtils';
 import type { Comment } from '@/lib/auth';
@@ -83,13 +82,10 @@ export default function CommentItem({ comment, onUpdate, onDelete }: CommentItem
     <div className={styles.comment}>
       <div className={styles.commentAvatar}>
         {hasValidAvatar(comment.memberAvatarUrl) && convertImageUrl(comment.memberAvatarUrl) ? (
-          <Image
+          <img
             src={convertImageUrl(comment.memberAvatarUrl)!}
             alt={comment.memberDisplayName || comment.memberName}
-            width={40}
-            height={40}
-            style={{ borderRadius: '50%', objectFit: 'cover' }}
-            unoptimized={convertImageUrl(comment.memberAvatarUrl)!.startsWith('/api/proxy/')}
+            style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }}
           />
         ) : (
           <span>{getAvatarInitial(comment.memberDisplayName, comment.memberName, comment.memberHandle)}</span>

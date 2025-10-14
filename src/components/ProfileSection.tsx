@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import Image from 'next/image';
 import type { AuthUser, ProfileData, HandleUpdateData } from '@/lib/auth';
 import { hasValidAvatar, getAvatarInitial, convertImageUrl } from '@/utils/avatarUtils';
 
@@ -140,13 +139,10 @@ export default function ProfileSection({
               position: 'relative'
             }}>
               {hasValidAvatar(profileFormData.avatarUrl) && convertImageUrl(profileFormData.avatarUrl) ? (
-                <Image
+                <img
                   src={convertImageUrl(profileFormData.avatarUrl)!}
                   alt={profile?.displayName || 'Profile'}
-                  width={100}
-                  height={100}
-                  style={{ borderRadius: '50%', objectFit: 'cover' }}
-                  unoptimized={convertImageUrl(profileFormData.avatarUrl)!.startsWith('/api/proxy/')}
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
                 />
               ) : (
                 getAvatarInitial(profile?.displayName, profile?.memberName, profile?.handle)

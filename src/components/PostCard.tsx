@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { Post } from '@/lib/auth';
 import { extractUrls } from '@/utils/linkPreview';
 import LinkPreview from './LinkPreview';
@@ -60,13 +59,10 @@ export default function PostCard({ post, onLike, onComment, onEdit, onDelete, is
       <div className={styles.postHeader}>
         <div className={styles.authorAvatar}>
           {hasValidAvatar(post.memberAvatarUrl) && convertImageUrl(post.memberAvatarUrl) ? (
-            <Image
+            <img
               src={convertImageUrl(post.memberAvatarUrl)!}
               alt="Profile"
-              width={40}
-              height={40}
               className={styles.avatarImage}
-              unoptimized={convertImageUrl(post.memberAvatarUrl)!.startsWith('/api/proxy/')}
             />
           ) : (
             <div className={styles.avatarPlaceholder}>

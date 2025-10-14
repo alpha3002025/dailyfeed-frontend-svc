@@ -446,3 +446,34 @@
   background: #f87171;
   cursor: not-allowed;
 }
+
+.loadMoreContainer {
+  padding: 12px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.loadMoreButton {
+  padding: 8px 20px;
+  background: #f7f9fa;
+  color: #1d9bf0;
+  border: 1px solid #e8f5fe;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.loadMoreButton:hover {
+  background: #e8f5fe;
+  border-color: #1d9bf0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(29, 155, 240, 0.2);
+}
+
+.loadMoreButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}

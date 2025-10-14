@@ -9,13 +9,14 @@ import styles from './CommentItem.module.css';
 
 interface CommentItemProps {
   comment: Comment;
+  postId: number; // Always pass postId explicitly
   onUpdate: (commentId: number, content: string) => Promise<void>;
   onDelete: (commentId: number) => Promise<void>;
   onReplyDeleted?: () => Promise<void>;
   isReply?: boolean; // Flag to indicate if this is a reply (nested comment)
 }
 
-export default function CommentItem({ comment, onUpdate, onDelete, onReplyDeleted, isReply = false }: CommentItemProps) {
+export default function CommentItem({ comment, postId, onUpdate, onDelete, onReplyDeleted, isReply = false }: CommentItemProps) {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -31,6 +32,8 @@ export default function CommentItem({ comment, onUpdate, onDelete, onReplyDelete
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyContent, setReplyContent] = useState('');
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMoreReplies, setHasMoreReplies] = useState(false);
 
   // Convert user.id to number for comparison since it might be a string
   const userId = user?.id ? Number(user.id) : null;
@@ -146,6 +149,8 @@ export default function CommentItem({ comment, onUpdate, onDelete, onReplyDelete
       // Close replies and reply form
       setShowReplies(false);
       setShowReplyForm(false);
+      setCurrentPage(0);
+      setReplies([]);
     } else {
       // Open replies and show reply form
       setShowReplies(true);
@@ -153,23 +158,41 @@ export default function CommentItem({ comment, onUpdate, onDelete, onReplyDelete
 
       // Always fetch replies when opening (to ensure fresh data)
       if (replyCount > 0) {
-        setIsLoadingReplies(true);
-        try {
-          console.log('💬 Fetching replies for comment:', comment.id);
-          const fetchedReplies = await getCommentReplies(comment.id);
-          console.log('✅ Replies fetched successfully:', fetchedReplies);
-          // Log each reply's parentId to debug
-          fetchedReplies.forEach((reply, index) => {
-            console.log(`Reply ${index} - id: ${reply.id}, parentId: ${reply.parentId}, has parentId: ${!!reply.parentId}`);
-          });
-          setReplies(fetchedReplies);
-        } catch (error) {
-          console.error('❌ Failed to fetch replies:', error);
-        } finally {
-          setIsLoadingReplies(false);
-        }
+        await loadReplies(0);
       }
     }
+  };
+
+  const loadReplies = async (page: number) => {
+    setIsLoadingReplies(true);
+    try {
+      console.log('💬 Fetching replies for comment:', comment.id, 'page:', page);
+      const fetchedReplies = await getCommentReplies(comment.id, page, 10);
+      console.log('✅ Replies fetched successfully:', fetchedReplies);
+
+      // Log each reply's parentId to debug
+      fetchedReplies.forEach((reply, index) => {
+        console.log(`Reply ${index} - id: ${reply.id}, parentId: ${reply.parentId}, replyCount: ${reply.replyCount}`);
+      });
+
+      // Check if there are more replies
+      setHasMoreReplies(fetchedReplies.length === 10);
+
+      if (page === 0) {
+        setReplies(fetchedReplies);
+      } else {
+        setReplies(prev => [...prev, ...fetchedReplies]);
+      }
+      setCurrentPage(page);
+    } catch (error) {
+      console.error('❌ Failed to fetch replies:', error);
+    } finally {
+      setIsLoadingReplies(false);
+    }
+  };
+
+  const handleLoadMoreReplies = () => {
+    loadReplies(currentPage + 1);
   };
 
   const handleSubmitReply = async () => {
@@ -177,8 +200,8 @@ export default function CommentItem({ comment, onUpdate, onDelete, onReplyDelete
 
     setIsSubmittingReply(true);
     try {
-      console.log('💬 Creating reply for comment:', comment.id);
-      const newReply = await createReply(comment.postId, comment.id, replyContent.trim());
+      console.log('💬 Creating reply for comment:', comment.id, 'postId:', postId, 'parentId:', comment.id);
+      const newReply = await createReply(postId, comment.id, replyContent.trim());
       console.log('✅ Reply created successfully:', newReply);
 
       // Add new reply to the list
@@ -197,13 +220,12 @@ export default function CommentItem({ comment, onUpdate, onDelete, onReplyDelete
     }
   };
 
-  // Function to refresh replies after a reply is deleted
+  // Function to refresh replies after a reply is deleted or added
   const handleRefreshReplies = async () => {
     console.log('🔄 Refreshing replies for comment:', comment.id);
     try {
-      const fetchedReplies = await getCommentReplies(comment.id);
-      console.log('✅ Replies refreshed successfully:', fetchedReplies);
-      setReplies(fetchedReplies);
+      // Reload from the first page to get fresh data
+      await loadReplies(0);
 
       // Also update reply count
       const updatedComment = await getCommentDetail(comment.id);
@@ -307,17 +329,15 @@ export default function CommentItem({ comment, onUpdate, onDelete, onReplyDelete
                 <span className={styles.likeIcon}>{isLiked ? '❤️' : '🤍'}</span>
                 <span className={styles.likeCount}>{likeCount.toLocaleString()}</span>
               </button>
-              {/* Only show reply button if this is not a reply */}
-              {!isReply && (
-                <button
-                  className={styles.replyButton}
-                  onClick={handleToggleReplies}
-                  title={showReplies ? '답글 숨기기' : (replyCount > 0 ? '답글 보기' : '답글 달기')}
-                >
-                  <span className={styles.replyIcon}>💬</span>
-                  <span className={styles.replyCount}>{replyCount.toLocaleString()}</span>
-                </button>
-              )}
+              {/* Show reply button for all comments (including nested replies) */}
+              <button
+                className={styles.replyButton}
+                onClick={handleToggleReplies}
+                title={showReplies ? '답글 숨기기' : (replyCount > 0 ? '답글 보기' : '답글 달기')}
+              >
+                <span className={styles.replyIcon}>💬</span>
+                <span className={styles.replyCount}>{replyCount.toLocaleString()}</span>
+              </button>
             </div>
 
             {/* Reply form and replies section */}
@@ -360,12 +380,25 @@ export default function CommentItem({ comment, onUpdate, onDelete, onReplyDelete
                       <CommentItem
                         key={reply.id}
                         comment={reply}
+                        postId={postId}
                         onUpdate={onUpdate}
                         onDelete={onDelete}
                         onReplyDeleted={handleRefreshReplies}
                         isReply={true}
                       />
                     ))}
+                  </div>
+                )}
+
+                {/* Load more replies button */}
+                {!isLoadingReplies && hasMoreReplies && replies.length > 0 && (
+                  <div className={styles.loadMoreContainer}>
+                    <button
+                      onClick={handleLoadMoreReplies}
+                      className={styles.loadMoreButton}
+                    >
+                      답글 더보기
+                    </button>
                   </div>
                 )}
 

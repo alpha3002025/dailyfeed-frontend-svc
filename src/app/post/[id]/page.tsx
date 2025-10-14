@@ -199,6 +199,7 @@ export default function PostDetailPage() {
                 <CommentItem
                   key={comment.id}
                   comment={comment}
+                  postId={postId}
                   onUpdate={handleUpdateComment}
                   onDelete={handleDeleteComment}
                 />

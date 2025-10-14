@@ -159,6 +159,9 @@ export interface Comment {
   parentId?: number | null;
   createdAt: string;
   updatedAt?: string;
+  likeCount?: number;
+  replyCount?: number;
+  isLiked?: boolean;
 }
 
 export interface PostsResponse {
@@ -992,7 +995,10 @@ class AuthService {
         memberName: comment.authorName || comment.memberName,
         memberHandle: comment.authorHandle || comment.memberHandle,
         memberDisplayName: comment.authorName || comment.memberDisplayName,
-        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl
+        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl,
+        likeCount: comment.likeCount,
+        replyCount: comment.replyCount,
+        isLiked: comment.liked ?? comment.isLiked ?? false
       }));
     } catch (error) {
       console.error('❌ Error fetching comments:', error);
@@ -1039,7 +1045,9 @@ class AuthService {
         memberName: comment.authorName || comment.memberName,
         memberHandle: comment.authorHandle || comment.memberHandle,
         memberDisplayName: comment.authorName || comment.memberDisplayName,
-        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl
+        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl,
+        likeCount: comment.likeCount,
+        replyCount: comment.replyCount
       };
     } catch (error) {
       console.error('❌ Error creating comment:', error);
@@ -1082,7 +1090,9 @@ class AuthService {
         memberName: comment.authorName || comment.memberName,
         memberHandle: comment.authorHandle || comment.memberHandle,
         memberDisplayName: comment.authorName || comment.memberDisplayName,
-        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl
+        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl,
+        likeCount: comment.likeCount,
+        replyCount: comment.replyCount
       };
     } catch (error) {
       console.error('❌ Error updating comment:', error);
@@ -1115,6 +1125,220 @@ class AuthService {
       console.log('✅ Comment deleted successfully');
     } catch (error) {
       console.error('❌ Error deleting comment:', error);
+      throw error;
+    }
+  }
+
+  // Like a comment
+  async likeComment(commentId: number): Promise<void> {
+    console.log('❤️ Liking comment ID:', commentId);
+    try {
+      const response = await fetch(`/api/proxy/comments/${commentId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to like comment:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to like comment: ${response.status}`);
+      }
+
+      console.log('✅ Comment liked successfully');
+    } catch (error) {
+      console.error('❌ Error liking comment:', error);
+      throw error;
+    }
+  }
+
+  // Unlike a comment
+  async unlikeComment(commentId: number): Promise<void> {
+    console.log('💔 Unliking comment ID:', commentId);
+    try {
+      const response = await fetch(`/api/proxy/comments/${commentId}/like`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to unlike comment:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to unlike comment: ${response.status}`);
+      }
+
+      console.log('✅ Comment unliked successfully');
+    } catch (error) {
+      console.error('❌ Error unliking comment:', error);
+      throw error;
+    }
+  }
+
+  // Get comment detail
+  async getCommentDetail(commentId: number): Promise<Comment> {
+    console.log('💬 Fetching comment detail for ID:', commentId);
+    try {
+      const response = await fetch(`/api/proxy/timeline/comments/${commentId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to fetch comment detail:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to fetch comment detail: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Comment detail fetched successfully:', result);
+
+      // Handle different response structures
+      const comment = result.data || result;
+
+      // Map backend field names to frontend field names
+      return {
+        ...comment,
+        memberId: comment.authorId || comment.memberId,
+        authorId: comment.authorId || comment.memberId,
+        memberName: comment.authorName || comment.memberName,
+        memberHandle: comment.authorHandle || comment.memberHandle,
+        memberDisplayName: comment.authorName || comment.memberDisplayName,
+        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl,
+        likeCount: comment.likeCount,
+        replyCount: comment.replyCount,
+        isLiked: comment.liked ?? comment.isLiked ?? false
+      };
+    } catch (error) {
+      console.error('❌ Error fetching comment detail:', error);
+      throw error;
+    }
+  }
+
+  // Create a reply (comment on a comment)
+  async createReply(postId: number, parentId: number, content: string): Promise<Comment> {
+    console.log('💬 Creating reply for parent comment:', parentId);
+    try {
+      const response = await fetch('/api/proxy/comments/replies', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          postId,
+          parentId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to create reply:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to create reply: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Reply created successfully:', result);
+
+      // Map backend field names to frontend field names
+      const comment = result.data || result;
+      return {
+        ...comment,
+        memberId: comment.authorId || comment.memberId,
+        authorId: comment.authorId || comment.memberId,
+        memberName: comment.authorName || comment.memberName,
+        memberHandle: comment.authorHandle || comment.memberHandle,
+        memberDisplayName: comment.authorName || comment.memberDisplayName,
+        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl,
+        likeCount: comment.likeCount,
+        replyCount: comment.replyCount
+      };
+    } catch (error) {
+      console.error('❌ Error creating reply:', error);
+      throw error;
+    }
+  }
+
+  // Get comment replies (nested comments)
+  async getCommentReplies(commentId: number, page: number = 0, size: number = 10): Promise<Comment[]> {
+    console.log('💬 Fetching comment replies for comment ID:', commentId);
+    try {
+      const response = await fetch(`/api/proxy/timeline/comments/${commentId}/replies?page=${page}&size=${size}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Failed to fetch comment replies:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorData.message || `Failed to fetch comment replies: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Comment replies fetched successfully:', result);
+
+      // Handle different response structures
+      let replies: Comment[] = [];
+      if (result.data && Array.isArray(result.data.content)) {
+        replies = result.data.content;
+      } else if (result.data && Array.isArray(result.data)) {
+        replies = result.data;
+      } else if (Array.isArray(result.content)) {
+        replies = result.content;
+      } else if (Array.isArray(result)) {
+        replies = result;
+      } else {
+        console.warn('Unexpected response structure:', result);
+        return [];
+      }
+
+      // Map backend field names to frontend field names
+      return replies.map((comment: any) => ({
+        ...comment,
+        memberId: comment.authorId || comment.memberId,
+        authorId: comment.authorId || comment.memberId,
+        memberName: comment.authorName || comment.memberName,
+        memberHandle: comment.authorHandle || comment.memberHandle,
+        memberDisplayName: comment.authorName || comment.memberDisplayName,
+        memberAvatarUrl: comment.authorAvatarUrl || comment.memberAvatarUrl,
+        parentId: comment.parentId,
+        likeCount: comment.likeCount,
+        replyCount: comment.replyCount,
+        isLiked: comment.liked ?? comment.isLiked ?? false
+      }));
+    } catch (error) {
+      console.error('❌ Error fetching comment replies:', error);
       throw error;
     }
   }
@@ -1714,10 +1938,20 @@ export const getPostComments = (postId: number) =>
   authService.getPostComments(postId);
 export const createComment = (postId: number, content: string, parentId?: number | null) =>
   authService.createComment(postId, content, parentId);
+export const createReply = (postId: number, parentId: number, content: string) =>
+  authService.createReply(postId, parentId, content);
 export const updateComment = (commentId: number, content: string) =>
   authService.updateComment(commentId, content);
 export const deleteComment = (commentId: number) =>
   authService.deleteComment(commentId);
+export const likeComment = (commentId: number) =>
+  authService.likeComment(commentId);
+export const unlikeComment = (commentId: number) =>
+  authService.unlikeComment(commentId);
+export const getCommentDetail = (commentId: number) =>
+  authService.getCommentDetail(commentId);
+export const getCommentReplies = (commentId: number, page?: number, size?: number) =>
+  authService.getCommentReplies(commentId, page, size);
 export const likePost = (postId: number) =>
   authService.likePost(postId);
 export const unlikePost = (postId: number) =>

@@ -1,7 +1,7 @@
 #!/bin/bash
 # 변수 설정
 IMAGE_NAME="alpha300uk/dailyfeed-frontend"
-IMAGE_TAG="v0.0.13"
+IMAGE_TAG="beta-20251015-0001"
 FULL_IMAGE_NAME="${IMAGE_NAME}:${IMAGE_TAG}"
 
 

@@ -5,6 +5,7 @@ import {
   IMAGE_SERVICE_URL,
   SEARCH_SERVICE_URL
 } from '@/config/env';
+import { httpClient } from '@/lib/httpClient';
 
 const TOKEN_KEY = 'dailyfeed_token';
 
@@ -533,22 +534,14 @@ class AuthService {
       requestUrl = `/api/proxy${url}`;
     }
 
-    const headers = {
-      ...this.getAuthHeaders(),
-      ...options.headers,
-    };
-
     console.log('🌐 Making authenticated request:', {
       url: requestUrl,
       method: options.method || 'GET',
-      headers: headers,
       body: options.body
     });
 
-    const response = await fetch(requestUrl, {
-      ...options,
-      headers,
-    });
+    // Use httpClient which handles token refresh automatically
+    const response = await httpClient.fetch(requestUrl, options);
 
     console.log('📡 Authenticated request response:', {
       url: requestUrl,
@@ -736,14 +729,7 @@ class AuthService {
   async createPost(content: string): Promise<void> {
     console.log('📝 Creating new post:', content);
     try {
-      const response = await fetch('/api/proxy/posts', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      });
+      const response = await httpClient.post('/api/proxy/posts', { content });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -768,14 +754,7 @@ class AuthService {
   async updatePost(postId: number, content: string): Promise<void> {
     console.log('✏️ Updating post:', postId, content);
     try {
-      const response = await fetch(`/api/proxy/posts/${postId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      });
+      const response = await httpClient.put(`/api/proxy/posts/${postId}`, { content });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -799,12 +778,7 @@ class AuthService {
   async deletePost(postId: number): Promise<void> {
     console.log('🗑️ Deleting post:', postId);
     try {
-      const response = await fetch(`/api/proxy/posts/${postId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-        },
-      });
+      const response = await httpClient.delete(`/api/proxy/posts/${postId}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -827,13 +801,7 @@ class AuthService {
   async getUserPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     console.log('📖 Fetching user posts...');
     try {
-      const response = await fetch(`/api/proxy/timeline/posts?page=${page}&size=${size}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.get(`/api/proxy/timeline/posts?page=${page}&size=${size}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -893,13 +861,7 @@ class AuthService {
   async getPostDetail(postId: number): Promise<PostDetail> {
     console.log('📄 Fetching post detail for ID:', postId);
     try {
-      const response = await fetch(`/api/proxy/timeline/posts/${postId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.get(`/api/proxy/timeline/posts/${postId}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -953,13 +915,7 @@ class AuthService {
   async getPostComments(postId: number): Promise<Comment[]> {
     console.log('💬 Fetching comments for post ID:', postId);
     try {
-      const response = await fetch(`/api/proxy/timeline/posts/${postId}/comments`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.get(`/api/proxy/timeline/posts/${postId}/comments`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1010,17 +966,10 @@ class AuthService {
   async createComment(postId: number, content: string, parentId?: number | null): Promise<Comment> {
     console.log('💬 Creating comment for post ID:', postId);
     try {
-      const response = await fetch('/api/proxy/comments', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content,
-          postId,
-          parentId: parentId || null
-        }),
+      const response = await httpClient.post('/api/proxy/comments', {
+        content,
+        postId,
+        parentId: parentId || null
       });
 
       if (!response.ok) {
@@ -1059,14 +1008,7 @@ class AuthService {
   async updateComment(commentId: number, content: string): Promise<Comment> {
     console.log('✏️ Updating comment ID:', commentId);
     try {
-      const response = await fetch(`/api/proxy/comments/${commentId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content }),
-      });
+      const response = await httpClient.put(`/api/proxy/comments/${commentId}`, { content });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1104,13 +1046,7 @@ class AuthService {
   async deleteComment(commentId: number): Promise<void> {
     console.log('🗑️ Deleting comment ID:', commentId);
     try {
-      const response = await fetch(`/api/proxy/comments/${commentId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.delete(`/api/proxy/comments/${commentId}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1133,13 +1069,7 @@ class AuthService {
   async likeComment(commentId: number): Promise<void> {
     console.log('❤️ Liking comment ID:', commentId);
     try {
-      const response = await fetch(`/api/proxy/comments/${commentId}/like`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.post(`/api/proxy/comments/${commentId}/like`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1162,13 +1092,7 @@ class AuthService {
   async unlikeComment(commentId: number): Promise<void> {
     console.log('💔 Unliking comment ID:', commentId);
     try {
-      const response = await fetch(`/api/proxy/comments/${commentId}/like`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.delete(`/api/proxy/comments/${commentId}/like`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1191,13 +1115,7 @@ class AuthService {
   async getCommentDetail(commentId: number): Promise<Comment> {
     console.log('💬 Fetching comment detail for ID:', commentId);
     try {
-      const response = await fetch(`/api/proxy/timeline/comments/${commentId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.get(`/api/proxy/timeline/comments/${commentId}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1238,17 +1156,10 @@ class AuthService {
   async createReply(postId: number, parentId: number, content: string): Promise<Comment> {
     console.log('💬 Creating reply for parent comment:', parentId);
     try {
-      const response = await fetch('/api/proxy/comments/replies', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          content,
-          postId,
-          parentId
-        }),
+      const response = await httpClient.post('/api/proxy/comments/replies', {
+        content,
+        postId,
+        parentId
       });
 
       if (!response.ok) {
@@ -1287,13 +1198,7 @@ class AuthService {
   async getCommentReplies(commentId: number, page: number = 0, size: number = 10): Promise<Comment[]> {
     console.log('💬 Fetching comment replies for comment ID:', commentId);
     try {
-      const response = await fetch(`/api/proxy/timeline/comments/${commentId}/replies?page=${page}&size=${size}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.get(`/api/proxy/timeline/comments/${commentId}/replies?page=${page}&size=${size}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1347,13 +1252,7 @@ class AuthService {
   async likePost(postId: number): Promise<number | void> {
     console.log('❤️ Liking post ID:', postId);
     try {
-      const response = await fetch(`/api/proxy/posts/${postId}/like`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.post(`/api/proxy/posts/${postId}/like`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1381,13 +1280,7 @@ class AuthService {
   async unlikePost(postId: number): Promise<number | void> {
     console.log('💔 Unliking post ID:', postId);
     try {
-      const response = await fetch(`/api/proxy/posts/${postId}/like`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.delete(`/api/proxy/posts/${postId}/like`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1414,13 +1307,7 @@ class AuthService {
   // Get most popular posts
   async getMostPopularPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
-      const response = await fetch(`/api/proxy/timeline/posts/most-popular?page=${page}&size=${size}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.get(`/api/proxy/timeline/posts/most-popular?page=${page}&size=${size}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1478,13 +1365,7 @@ class AuthService {
   // Get most commented posts
   async getMostCommentedPosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
-      const response = await fetch(`/api/proxy/timeline/posts/most-commented?page=${page}&size=${size}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.get(`/api/proxy/timeline/posts/most-commented?page=${page}&size=${size}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -1777,13 +1658,7 @@ class AuthService {
   async searchPosts(keyword: string, page: number = 0, size: number = 20): Promise<Post[]> {
     console.log('🔍 Searching posts with keyword:', keyword);
     try {
-      const response = await fetch(`/api/proxy/search/posts/?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.get(`/api/proxy/search/posts/?keyword=${encodeURIComponent(keyword)}&page=${page}&size=${size}`);
 
       if (!response.ok) {
         console.error('❌ Search failed:', response.status);
@@ -1833,13 +1708,7 @@ class AuthService {
   // Get following members' timeline posts
   async getFollowingTimelinePosts(page: number = 0, size: number = 20): Promise<Post[]> {
     try {
-      const response = await fetch(`/api/proxy/timeline/posts/followings?page=${page}&size=${size}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await httpClient.get(`/api/proxy/timeline/posts/followings?page=${page}&size=${size}`);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

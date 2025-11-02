@@ -31,32 +31,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const token = authService.getToken();
 
         if (token) {
-          const storedEmail = localStorage.getItem('user_email') || 'user@example.com';
-          const storedHandle = localStorage.getItem('user_handle') || storedEmail.split('@')[0];
-          const storedMemberId = localStorage.getItem('user_member_id');
-          const storedAvatarUrl = localStorage.getItem('user_avatar_url');
+          // Validate token by fetching user profile from server
+          try {
+            const userData = await authService.getMyProfile();
+            setUser(userData);
+            setIsAuthenticated(true);
 
-          const tempUser: AuthUser = {
-            id: storedMemberId || 'temp-id',
-            email: storedEmail,
-            memberName: storedHandle,
-            handle: storedHandle,
-            displayName: storedHandle,
-            memberId: storedMemberId ? parseInt(storedMemberId) : undefined,
-            avatarUrl: storedAvatarUrl || undefined,
-          };
-          setUser(tempUser);
-          setIsAuthenticated(true);
-          setIsLoading(false);
+            // Update localStorage with fresh user info
+            localStorage.setItem('user_email', userData.email);
+            localStorage.setItem('user_handle', userData.handle);
+            if (userData.memberId) {
+              localStorage.setItem('user_member_id', userData.memberId.toString());
+            }
+            if (userData.avatarUrl) {
+              localStorage.setItem('user_avatar_url', userData.avatarUrl);
+            }
+          } catch (error) {
+            // Token is invalid or user doesn't exist on server
+            // This will be handled by X-Relogin-Required header in httpClient
+            console.error('Token validation failed:', error);
+            authService.logout();
+            setUser(null);
+            setIsAuthenticated(false);
+          }
         } else {
           setIsAuthenticated(false);
-          setIsLoading(false);
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
         authService.logout();
         setUser(null);
         setIsAuthenticated(false);
+      } finally {
         setIsLoading(false);
       }
     };

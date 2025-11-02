@@ -446,14 +446,13 @@ class AuthService {
       ok: response.ok
     });
 
-    // If we get a 401, the token might be expired
-    // Temporarily disable auto-logout to debug login issues
+    // Handle 401 Unauthorized
+    // Note: Don't auto-logout on 401 because:
+    // 1. X-Token-Refresh-Needed header triggers token refresh (handled by httpClient)
+    // 2. X-Relogin-Required header triggers redirect to login (handled by httpClient)
+    // 3. We should throw error and let the caller handle it
     if (response.status === 401) {
       console.warn('401 Unauthorized response received for:', url);
-      // this.logout();
-      // if (typeof window !== 'undefined') {
-      //   window.location.href = '/login';
-      // }
       throw new Error('Authentication expired. Please login again.');
     }
 

@@ -38,7 +38,6 @@ class HttpClient {
    * Refresh the access token
    */
   private async refreshToken(): Promise<string | null> {
-    // If already refreshing, return the existing promise
     if (this.isRefreshing && this.refreshPromise) {
       return this.refreshPromise;
     }
@@ -46,38 +45,30 @@ class HttpClient {
     this.isRefreshing = true;
     this.refreshPromise = (async () => {
       try {
-        console.log('🔄 Refreshing token...');
         const response = await fetch('/api/proxy/token/refresh', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include', // Include cookies (refresh_token is httpOnly)
+          credentials: 'include',
         });
 
         if (!response.ok) {
-          console.error('❌ Token refresh failed:', response.status);
           return null;
         }
 
-        // Extract new token from Authorization header
         const authHeader = response.headers.get('Authorization');
         if (!authHeader) {
-          console.error('❌ No Authorization header in refresh response');
           return null;
         }
 
-        // Remove 'Bearer ' prefix if present
         const newToken = authHeader.startsWith('Bearer ')
           ? authHeader.substring(7)
           : authHeader;
 
-        console.log('✅ Token refreshed successfully');
-        console.log('🍪 Refresh token cookie updated by server');
         this.setToken(newToken);
         return newToken;
       } catch (error) {
-        console.error('❌ Token refresh error:', error);
         return null;
       } finally {
         this.isRefreshing = false;
@@ -111,38 +102,27 @@ class HttpClient {
       credentials: 'include', // Include cookies in all requests
     });
 
-    // Check if relogin is required
     const reloginRequired = response.headers.get('X-Relogin-Required');
     if (reloginRequired === 'true') {
-      console.warn('⚠️ Relogin required - clearing session and redirecting to login');
-
-      // 1. Clear local storage and session storage
       if (typeof window !== 'undefined') {
         localStorage.clear();
         sessionStorage.clear();
 
-        // 2. Cookies will be automatically expired by the browser
-        // (Refresh Token is expired, so server will reject it)
-
-        // 3. Redirect to login page
-        window.location.href = '/login';
+        const currentPath = window.location.pathname;
+        if (!currentPath.startsWith('/login')) {
+          window.location.href = '/login';
+        }
       }
-
-      // Return the response as-is (redirect will happen before further processing)
       return response;
     }
 
-    // Check if token refresh is needed
     if (!skipTokenRefresh) {
       const refreshNeeded = response.headers.get('X-Token-Refresh-Needed');
 
       if (refreshNeeded === 'true') {
-        console.log('⚠️ Token refresh needed, refreshing...');
         const newToken = await this.refreshToken();
 
         if (newToken) {
-          // Retry the original request with the new token
-          console.log('🔄 Retrying request with new token');
           const retryHeaders: HeadersInit = {
             ...fetchOptions.headers,
             'Authorization': `Bearer ${newToken}`,
@@ -153,8 +133,6 @@ class HttpClient {
             headers: retryHeaders,
             credentials: 'include',
           });
-        } else {
-          console.error('❌ Failed to refresh token, returning original response');
         }
       }
     }

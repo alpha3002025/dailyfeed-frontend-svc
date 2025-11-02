@@ -115,10 +115,17 @@ async function proxyRequest(
       }
     });
 
+    // Forward Cookie header from the incoming request
+    const cookieHeader = request.headers.get('Cookie');
+    if (cookieHeader) {
+      headers['Cookie'] = cookieHeader;
+    }
+
     // Prepare request options
     const requestOptions: RequestInit = {
       method: request.method,
       headers,
+      credentials: 'include', // Include cookies in backend requests
     };
 
     // Add body for POST, PUT, PATCH requests
@@ -140,7 +147,6 @@ async function proxyRequest(
       }
     }
 
-    // Make the proxied request
     const response = await fetch(fullUrl, requestOptions);
 
     // Handle image/binary responses
@@ -181,8 +187,7 @@ async function proxyRequest(
       'Content-Type': 'application/json',
     };
 
-    // Forward specific headers from backend
-    const headersToForward = ['Authorization', 'Set-Cookie', 'Cache-Control'];
+    const headersToForward = ['Authorization', 'Cache-Control', 'X-Token-Refresh-Needed', 'X-Relogin-Required'];
     headersToForward.forEach(headerName => {
       const value = response.headers.get(headerName);
       if (value) {
@@ -190,12 +195,19 @@ async function proxyRequest(
       }
     });
 
-    console.log(`[API Proxy] Response status: ${response.status}`);
-
-    return NextResponse.json(responseData, {
+    const nextResponse = NextResponse.json(responseData, {
       status: response.status,
       headers: responseHeaders,
     });
+
+    const setCookieHeaders = response.headers.getSetCookie();
+    if (setCookieHeaders && setCookieHeaders.length > 0) {
+      setCookieHeaders.forEach((cookie) => {
+        nextResponse.headers.append('Set-Cookie', cookie);
+      });
+    }
+
+    return nextResponse;
 
   } catch (error) {
     console.error('[API Proxy] Error:', error);

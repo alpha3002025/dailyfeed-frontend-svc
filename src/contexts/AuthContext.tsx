@@ -26,16 +26,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged in on app start
     const initializeAuth = async () => {
       try {
-        console.log('🔄 AuthContext: Initializing auth...');
         const token = authService.getToken();
-        console.log('🔍 AuthContext: Token check result:', token ? 'found' : 'not found');
 
         if (token) {
-          console.log('✅ AuthContext: Setting authenticated state to TRUE');
-          // Create user object from stored data
           const storedEmail = localStorage.getItem('user_email') || 'user@example.com';
           const storedHandle = localStorage.getItem('user_handle') || storedEmail.split('@')[0];
           const storedMemberId = localStorage.getItem('user_member_id');
@@ -54,11 +49,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setIsAuthenticated(true);
           setIsLoading(false);
         } else {
-          console.log('❌ AuthContext: Setting authenticated state to FALSE');
           setIsAuthenticated(false);
           setIsLoading(false);
         }
-        console.log('🏁 AuthContext: Auth initialization complete');
       } catch (error) {
         console.error('Auth initialization error:', error);
         authService.logout();
@@ -73,13 +66,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      console.log('🔑 AuthContext: Starting login process');
       setIsLoading(true);
       const { user: userData } = await authService.login(credentials);
-      console.log('👤 AuthContext: Login successful, setting user:', userData);
       setUser(userData);
       setIsAuthenticated(true);
-      // Store user info for session persistence
+
       localStorage.setItem('user_email', userData.email);
       localStorage.setItem('user_handle', userData.handle);
       if (userData.memberId) {
@@ -88,15 +79,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (userData.avatarUrl) {
         localStorage.setItem('user_avatar_url', userData.avatarUrl);
       }
-      console.log('✅ AuthContext: Auth state updated - isAuthenticated: true');
     } catch (error) {
-      console.error('❌ AuthContext: Login failed:', error);
       setUser(null);
       setIsAuthenticated(false);
       throw error;
     } finally {
       setIsLoading(false);
-      console.log('🏁 AuthContext: Login process finished, isLoading: false');
     }
   };
 

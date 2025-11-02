@@ -16,12 +16,11 @@ export default function Page() {
     const [signupLoading, setSignupLoading] = useState(false);
     const [signupError, setSignupError] = useState('');
 
-    // Redirect if already authenticated
     useEffect(() => {
-        if (!isLoading && isAuthenticated) {
+        if (!isLoading && isAuthenticated && !loginLoading) {
             router.push('/');
         }
-    }, [isAuthenticated, isLoading, router]);
+    }, [isAuthenticated, isLoading, loginLoading, router]);
 
     // Signup form states
     const [signupData, setSignupData] = useState({
@@ -56,9 +55,8 @@ export default function Page() {
 
         try {
             await login({ email, password });
-            // Redirect will be handled by useEffect above
+            router.push('/');
         } catch (error) {
-            console.error('Login error:', error);
             setLoginError(error instanceof Error ? error.message : '로그인에 실패했습니다.');
         } finally {
             setLoginLoading(false);

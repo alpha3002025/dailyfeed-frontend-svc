@@ -230,25 +230,26 @@ class AuthService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(credentials),
+        credentials: 'include',
       });
 
-      // Get response body first (even if response.ok is false, we need to read the body)
       const responseData = await response.json();
-      console.log('Login response:', responseData);
 
-      // Check for backend error indicators
+      console.log('Login response:', {
+        status: response.status,
+        ok: response.ok,
+        hasAuthHeader: !!response.headers.get('Authorization'),
+        resultCode: responseData.resultCode
+      });
+
       if (!response.ok || responseData.resultCode === 'FAIL' || responseData.statusCode >= 400) {
         const errorMessage = responseData.message || '로그인에 실패했습니다.';
-        console.error('❌ Login failed:', errorMessage);
+        console.error('Login failed:', errorMessage);
         throw new Error(errorMessage);
       }
 
-      // Try to extract JWT token from various possible locations
+      // Extract JWT token from response headers
       let token = null;
-      console.log('🔍 Searching for token in response...');
-
-      // 1. Check response headers
-      console.log('📋 Checking response headers for token...');
       const authHeader = response.headers.get('Authorization') ||
                         response.headers.get('authorization') ||
                         response.headers.get('x-auth-token') ||
@@ -256,154 +257,57 @@ class AuthService {
 
       if (authHeader) {
         token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
-        console.log('✅ Token found in headers:', token.substring(0, 20) + '...');
+        console.log('Token found in header');
       } else {
-        console.log('❌ No token found in headers');
+        console.log('No Authorization header found');
       }
 
-      // 2. Check response body for token
+      // Fallback: Check response body
       if (!token && responseData.token) {
         token = responseData.token;
-        console.log('✅ Token found in response body (token):', token.substring(0, 20) + '...');
       }
-
-      // 3. Check response body for access_token
       if (!token && responseData.accessToken) {
         token = responseData.accessToken;
-        console.log('✅ Access token found in response body:', token.substring(0, 20) + '...');
       }
-
-      // 4. Check response body for jwt
       if (!token && responseData.jwt) {
         token = responseData.jwt;
-        console.log('✅ JWT found in response body:', token.substring(0, 20) + '...');
       }
-
-      // 5. Check response body for access-token (with dash)
       if (!token && responseData['access-token']) {
         token = responseData['access-token'];
-        console.log('✅ Access-token found in response body:', token.substring(0, 20) + '...');
       }
-
-      // 6. Check nested content object
       if (!token && responseData.content && typeof responseData.content === 'object') {
         const content = responseData.content;
-        if (content.token) {
-          token = content.token;
-          console.log('✅ Token found in content object:', token.substring(0, 20) + '...');
-        } else if (content.accessToken) {
-          token = content.accessToken;
-          console.log('✅ AccessToken found in content object:', token.substring(0, 20) + '...');
-        }
+        token = content.token || content.accessToken;
       }
-
-      // Log all response headers for debugging
-      console.log('📋 All response headers:');
-      response.headers.forEach((value, key) => {
-        console.log(`  ${key}: ${value}`);
-      });
-
-      // Specifically check for Authorization header
-      const authHeaderDirect = response.headers.get('Authorization');
-      console.log('🔍 Direct Authorization header check:', authHeaderDirect);
-
-      // Check if headers are accessible
-      const headerKeys = Array.from(response.headers.keys());
-      console.log('📝 Available header keys:', headerKeys);
-
-      // Log response body structure for debugging
-      console.log('📦 Response body keys:', Object.keys(responseData));
-      console.log('📦 Response body structure:', responseData);
 
       if (!token) {
-        console.error('❌ No JWT token found in server response');
-        console.error('This is likely a CORS issue - Authorization header is not exposed');
-        console.error('Available header keys:', Array.from(response.headers.keys()));
-
-        // Temporary workaround: Check if this is a CORS issue
-        if (Array.from(response.headers.keys()).length === 0 || !response.headers.get('Authorization')) {
-          console.warn('⚠️ CORS issue detected - using temporary token for development');
-          // For development only - create a temporary token that looks like JWT
-          token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IiAyHJAm9haWwuY29tIiwiaWF0IjoxNzU4NTg4Nzk3fQ.temp_signature_for_dev';
-          console.log('🔧 Using temporary development token');
-        } else {
-          throw new Error('서버에서 인증 토큰을 받지 못했습니다. 서버 설정을 확인해주세요.');
-        }
+        throw new Error('서버에서 인증 토큰을 받지 못했습니다.');
       }
 
-      // Store token
-      console.log('💾 Storing token:', token ? 'Token exists' : 'No token');
       this.setToken(token);
-      console.log('🔍 Token after storage:', this.getToken() ? 'Token stored successfully' : 'Token storage failed');
 
-      // Try to decode JWT to get user ID
-      let decodedToken: any = null;
-      if (token && token !== 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IiAyHJAm9haWwuY29tIiwiaWF0IjoxNzU4NTg4Nzk3fQ.temp_signature_for_dev') {
-        decodedToken = this.decodeJWT(token);
-        console.log('🔐 Decoded JWT token:', decodedToken);
-      }
+      const decodedToken: any = token ? this.decodeJWT(token) : null;
 
-      // Create user object from response data
-      // Extract user details from the login response
-      // Check multiple possible field names for memberId
       const extractedMemberId = decodedToken?.memberId ||
                                decodedToken?.id ||
-                               decodedToken?.userId ||
                                responseData.memberId ||
-                               responseData.member_id ||
-                               responseData.id ||
-                               responseData.userId ||
-                               responseData.user_id ||
-                               responseData.content?.memberId ||
-                               responseData.content?.id ||
-                               responseData.data?.memberId ||
-                               responseData.data?.id;
+                               responseData.data?.memberId;
 
-      console.log('🔍 Searching for memberId in response and JWT:', {
-        'decodedToken?.memberId': decodedToken?.memberId,
-        'decodedToken?.id': decodedToken?.id,
-        'responseData.memberId': responseData.memberId,
-        'responseData.member_id': responseData.member_id,
-        'responseData.id': responseData.id,
-        'responseData.userId': responseData.userId,
-        'responseData.content?.memberId': responseData.content?.memberId,
-        'responseData.data?.memberId': responseData.data?.memberId,
-        'extracted': extractedMemberId
-      });
-
-      // Check if avatar URL exists in different possible locations
       const avatarUrl = responseData.avatarUrl ||
-                       responseData.avatar_url ||
-                       responseData.profileImageUrl ||
-                       responseData.profile_image_url ||
-                       responseData.content?.avatarUrl ||
-                       responseData.content?.profileImageUrl ||
                        responseData.data?.avatarUrl ||
-                       responseData.data?.profileImageUrl ||
                        null;
-
-      console.log('🖼️ Avatar URL search:', {
-        'responseData.avatarUrl': responseData.avatarUrl,
-        'responseData.profileImageUrl': responseData.profileImageUrl,
-        'responseData.content?.avatarUrl': responseData.content?.avatarUrl,
-        'responseData.data?.avatarUrl': responseData.data?.avatarUrl,
-        'extracted': avatarUrl
-      });
 
       const userData: AuthUser = {
         id: extractedMemberId?.toString() || 'temp-id',
-        email: responseData.email || responseData.content?.email || credentials.email,
-        memberName: responseData.memberName || responseData.content?.memberName || responseData.name || credentials.email.split('@')[0],
-        handle: responseData.handle || responseData.content?.handle || responseData.memberHandle || credentials.email.split('@')[0],
-        displayName: responseData.displayName || responseData.content?.displayName || responseData.memberName || responseData.name || credentials.email.split('@')[0],
-        memberId: extractedMemberId ? (typeof extractedMemberId === 'number' ? extractedMemberId : parseInt(extractedMemberId)) : undefined,
+        email: responseData.email || responseData.data?.email || credentials.email,
+        memberName: responseData.memberName || responseData.data?.memberName || credentials.email.split('@')[0],
+        handle: responseData.handle || responseData.data?.handle || credentials.email.split('@')[0],
+        displayName: responseData.displayName || responseData.data?.displayName || credentials.email.split('@')[0],
+        memberId: extractedMemberId ? parseInt(extractedMemberId.toString()) : undefined,
         avatarUrl: avatarUrl,
-        followersCount: responseData.followersCount || responseData.content?.followersCount,
-        followingCount: responseData.followingCount || responseData.content?.followingCount,
+        followersCount: responseData.followersCount || responseData.data?.followersCount,
+        followingCount: responseData.followingCount || responseData.data?.followingCount,
       };
-
-      console.log('📤 Extracted user data:', userData);
-      console.log('📤 MemberId specifically:', userData.memberId);
 
       return {
         user: userData,
@@ -459,15 +363,7 @@ class AuthService {
 
   getToken(): string | null {
     if (typeof window !== 'undefined') {
-      const storedToken = localStorage.getItem(TOKEN_KEY);
-
-      // Check if it's the temporary development token and clear it
-      if (storedToken && storedToken.includes('temp_signature_for_dev')) {
-        this.clearToken();
-        return null;
-      }
-
-      this.token = storedToken;
+      this.token = localStorage.getItem(TOKEN_KEY);
     }
 
     return this.token;

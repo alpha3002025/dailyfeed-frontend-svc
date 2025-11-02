@@ -287,6 +287,28 @@ export default function FeedPage() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Handle fullscreen change to restore scroll
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
+
   const handlePostSubmit = async () => {
     if (!postContent.trim()) {
       setPostError('글 내용을 입력해주세요.');
